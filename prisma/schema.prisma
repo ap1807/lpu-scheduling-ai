@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// AUTH & ACCESS CONTROL
+// =====================================================================
+
+enum UserRolePlaceholder {
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  role          String // ADMIN | SCHEDULER | FACULTY | STUDENT
+  title         String?
+  linkedFacultyId  String?
+  linkedGroupId   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// =====================================================================
+// ACADEMIC STRUCTURE (LPU)
+// =====================================================================
+
+model AcademicBlock {
+  id       String @id
+  code     String @unique // e.g. "B24"
+  name     String // e.g. "Block 24 - School of Computer Science"
+  campus   String @default("Main Campus, Phagwara")
+}
+
+model School {
+  id      String @id
+  code    String @unique // e.g. "SCSE"
+  name    String
+  blockId String?
+}
+
+model Program {
+  id        String @id
+  code      String @unique // e.g. "BTech-CSE"
+  name      String
+  schoolId  String
+  degreeLevel String @default("UG") // UG | PG
+}
+
+model Course {
+  id             String  @id
+  code           String  @unique // e.g. "CSE301"
+  name           String
+  schoolId       String
+  credits        Int     @default(4)
+  courseType     String  @default("THEORY") // THEORY | LAB | THEORY_LAB
+  requiresLab    Boolean @default(false)
+  examDurationMin Int    @default(180)
+}
+
+model StudentGroup {
+  id        String @id
+  code      String @unique // e.g. "CSE23-A"
+  name      String
+  programId String
+  semester  Int
+  section   String
+  size      Int
+}
+
+model Faculty {
+  id            String  @id
+  code          String  @unique // e.g. "FAC-101"
+  name          String
+  email         String
+  schoolId      String
+  designation   String  @default("Assistant Professor")
+  maxWeeklyHours Int    @default(20)
+  unavailable   String  @default("[]") // JSON weekly recurring: [{day, startMin, endMin, reason}]
+  preferences   String  @default("{}") // JSON preferences: {noLateEvening, preferBlock, ...}
+}
+
+model Room {
+  id           String  @id
+  code         String  @unique // e.g. "B24-105"
+  roomNo       String
+  name         String
+  blockId      String
+  roomType     String  // CLASSROOM | LABORATORY | EXAM_VENUE | AUDITORIUM | SEMINAR_HALL | EVENT_VENUE
+  capacity     Int
+  isExamVenue  Boolean @default(false)
+  features     String  @default("{}") // JSON: {projector, computers, labType, ac}
+  unavailable  String  @default("[]") // JSON: weekly recurring [{day, startMin, endMin, reason}] + date-specific
+}
+
+// =====================================================================
+// SCHEDULE ACTIVITIES
+// =====================================================================
+
+model Activity {
+  id              String   @id @default(cuid())
+  activityCode    String   @unique // e.g. "ACT-0042"
+  courseCode      String
+  courseName      String
+  sectionCode     String   // e.g. "CSE301-A"
+  programCode     String
+  schoolCode      String
+  facultyId       String
+  facultyName     String
+  studentGroupId  String
+  studentGroupCode String
+  roomId          String
+  roomCode        String
+  blockId         String
+  blockCode       String
+  activityType    String   @default("CLASS") // CLASS | TUTORIAL | LAB | WORKSHOP | SEMINAR | EXAM | EVENT | OTHER
+  date            String   // ISO YYYY-MM-DD
+  dayOfWeek       Int      // 0=Sun .. 6=Sat
+  startMin        Int      // minutes from midnight
+  endMin          Int
+  capacityRequired Int
+  notes           String?
+  status          String   @default("SCHEDULED") // SCHEDULED | CANCELLED
+  isDemoConflict  Boolean  @default(false) // inserted for demonstration
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// =====================================================================
+// CONFLICTS & RESOLUTIONS
+// =====================================================================
+
+model ConflictRecord {
+  id                  String    @id @default(cuid())
+  code                String    @unique // e.g. "CFLT-0001"
+  conflictType        String
+  category            String    // HARD | SOFT
+  severity            String    // CRITICAL | HIGH | MEDIUM | LOW
+  status              String    @default("OPEN") // OPEN | ANALYZED | RESOLUTION_PENDING | RESOLVED | DISMISSED
+  activityIds         String    @default("[]") // JSON array of activity ids
+  activitiesSnapshot  String    @default("[]") // JSON snapshot of involved activities at detection time
+  affectedResources   String    @default("{}") // JSON: {rooms, faculty, studentGroups, courses, blocks}
+  rootCause           String
+  directImpact        String
+  cascadingImpact     String    @default("[]") // JSON cascade chain
+  detectedAt          DateTime  @default(now())
+  lastAnalyzedAt      DateTime?
+  resolvedAt          DateTime?
+  resolutionNote      String?
+}
+
+model ResolutionRequest {
+  id             String   @id @default(cuid())
+  code           String   @unique // e.g. "RES-0001"
+  conflictId     String
+  conflictCode   String
+  status         String   @default("AWAITING_APPROVAL") // ANALYZING | AWAITING_APPROVAL | APPROVED | REJECTED | APPLIED | FAILED
+  stages         String   @default("[]") // JSON agentic pipeline stage log
+  aiNarrative    String?  // LLM root-cause/impact narrative
+  recommendation String?  // JSON of recommended candidate summary
+  requestedBy    String
+  requestedByName String
+  decidedBy      String?
+  decidedAt      DateTime?
+  decisionNote   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  candidates     CandidateSolution[]
+}
+
+model CandidateSolution {
+  id               String   @id @default(cuid())
+  requestId        String
+  request          ResolutionRequest @relation(fields: [requestId], references: [id])
+  solutionType     String   // REASSIGN_ROOM | CHANGE_TIME_SLOT | CHANGE_DATE | SWAP_ROOMS | SWAP_FACULTY | RESCHEDULE | MOVE_EXAM_VENUE | CHANGE_EXAM_TIME | COMBINED
+  title            String
+  changes          String   @default("[]") // JSON [{activityId, field, from, to}]
+  valid            Boolean  @default(false)
+  validationReport String   @default("{}") // JSON {passed: [], failures: [], engineVerified: true}
+  score            Float    @default(0)
+  rank             Int      @default(0)
+  reasoning        String   // AI explanation
+  expectedBenefits String   @default("[]") // JSON list
+  sideEffects      String   @default("[]") // JSON list
+  status           String   @default("PROPOSED") // PROPOSED | INVALID | REJECTED | SELECTED | APPLIED
+  createdAt        DateTime @default(now())
+}
+
+// =====================================================================
+// WHAT-IF SIMULATION
+// =====================================================================
+
+model SimulationScenario {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdBy   String
+  createdByName String
+  changes     String   @default("[]") // JSON [{activityId, field, from, to}]
+  result      String   @default("{}") // JSON simulation comparison summary
+  status      String   @default("SIMULATED") // SIMULATED | APPLIED | DISCARDED
+  createdAt   DateTime @default(now())
+}
+
+// =====================================================================
+// AUDIT TRAIL
+// =====================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  code       String   @unique // e.g. "AUD-0001"
+  action     String   // SEED | SCHEDULE_CREATED | SCHEDULE_UPDATED | SCHEDULE_DELETED | CONFLICT_DETECTED | AI_ANALYSIS_GENERATED | SOLUTION_APPROVED | SOLUTION_REJECTED | CHANGE_APPLIED | SIMULATION_CREATED | SIMULATION_APPLIED | RESOLUTION_VERIFIED
+  actorId    String
+  actorName  String
+  actorRole  String
+  conflictId String?
+  conflictCode String?
+  targetType String
+  targetId   String?
+  summary    String
+  details    String   @default("{}") // JSON full state snapshot
+  createdAt  DateTime @default(now())
+}
+
+// =====================================================================
+// CONFIGURABLE SCHEDULING RULES
+// =====================================================================
+
+model SchedulingRules {
+  id        String   @id @default("main")
+  config    String   @default("{}") // JSON rule configuration
+  updatedAt DateTime @updatedAt
+}
