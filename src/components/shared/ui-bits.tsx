@@ -37,7 +37,7 @@ export function StatusBadge({ status }: { status: string }) {
     SELECTED: 'bg-orange-50 text-orange-700 border-orange-200',
   };
   return (
-    <Badge variant="outline" className={cn('text-[11px] whitespace-nowrap', map[status] ?? 'bg-slate-50 text-slate-600')}>
+    <Badge variant="outline" className={cn('text-[11px] whitespace-nowrap transition-colors duration-300', map[status] ?? 'bg-slate-50 text-slate-600')}>
       {status.replace(/_/g, ' ')}
     </Badge>
   );
@@ -99,7 +99,7 @@ export function KpiCard({ label, value, icon: Icon, tone, hint }: { label: strin
     violet: 'text-violet-600 bg-violet-50 dark:bg-violet-950/40',
   };
   return (
-    <div className="rounded-xl border glass-panel p-4 min-w-0">
+    <div className="rounded-xl border glass-panel glass-hover-soft p-4 min-w-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground truncate">{label}</span>
         <div className={cn('w-7 h-7 rounded-md flex items-center justify-center shrink-0', tones[tone ?? 'slate'])}>

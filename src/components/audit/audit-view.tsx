@@ -70,7 +70,7 @@ export function AuditView() {
               Every important scheduling operation records the original state, conflict, analysis, decisions, applied changes and post-change verification.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+          <CardContent className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto overscroll-contain">
             {logs.map((l) => {
               const meta = ACTION_META[l.action] ?? { icon: ScrollText, cls: 'bg-slate-100 text-slate-600 border-slate-300', label: l.action };
               const isOpen = expanded === l.id;
@@ -81,7 +81,7 @@ export function AuditView() {
                 details = null;
               }
               return (
-                <div key={l.id} className={cn('glass-panel rounded-xl border p-3 transition', isOpen && 'border-orange-300')}>
+                <div key={l.id} className={cn('glass-panel rounded-xl border p-3 transition-[border-color,box-shadow] duration-200', isOpen && 'border-orange-300')}>
                   <button className="w-full flex items-start gap-3 text-left" onClick={() => setExpanded(isOpen ? null : l.id)}>
                     <div className={cn('w-8 h-8 rounded-md border flex items-center justify-center shrink-0', meta.cls)}>
                       <meta.icon className="w-4 h-4" />
@@ -100,7 +100,7 @@ export function AuditView() {
                     <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 mt-1', isOpen && 'rotate-180')} />
                   </button>
                   {isOpen && details !== null && (
-                    <pre className="glass-well mt-2 text-[10px] whitespace-pre-wrap font-mono rounded-md p-3 max-h-80 overflow-y-auto leading-relaxed">
+                    <pre className="glass-well mt-2 text-[10px] whitespace-pre-wrap font-mono rounded-md p-3 max-h-80 overflow-y-auto overscroll-contain leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
                       {JSON.stringify(details, null, 2).slice(0, 6000)}
                     </pre>
                   )}

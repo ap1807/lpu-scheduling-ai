@@ -145,7 +145,7 @@ export function ConflictCenterView() {
             <Card
               key={c.id}
               className={cn(
-                'cursor-pointer hover:shadow-md hover:border-orange-300 transition py-0 overflow-hidden',
+                'group cursor-pointer hover:shadow-md hover:border-orange-300 transition-[box-shadow,border-color] duration-200 py-0 overflow-hidden',
                 c.severity === 'CRITICAL' && 'border-l-4 border-l-red-500',
                 c.severity === 'HIGH' && 'border-l-4 border-l-orange-500',
                 c.severity === 'MEDIUM' && 'border-l-4 border-l-amber-400',
@@ -173,7 +173,7 @@ export function ConflictCenterView() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="hidden sm:inline">{c.activityCount} record{c.activityCount > 1 ? 's' : ''}</span>
-                  <ChevronRight className="w-4 h-4 text-orange-600" />
+                  <ChevronRight className="w-4 h-4 text-orange-600 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </div>
               </CardContent>
             </Card>

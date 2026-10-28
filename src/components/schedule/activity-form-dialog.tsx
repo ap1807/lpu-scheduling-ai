@@ -117,8 +117,8 @@ function ActivityForm({ activity, onDone }: { activity: ActivityRow | null; onDo
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
+    <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+      <DialogHeader className="px-6 pt-6 shrink-0">
         <DialogTitle>{activity ? `Edit ${activity.activityCode}` : 'Create activity'}</DialogTitle>
         <DialogDescription>
           {activity
@@ -127,9 +127,13 @@ function ActivityForm({ activity, onDone }: { activity: ActivityRow | null; onDo
         </DialogDescription>
       </DialogHeader>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>Course code *</Label>
+      {/* Scrollable middle: the title and the submit row stay pinned while
+          long form content scrolls — overscroll contained so wheel events at
+          the boundary never chain to the page behind the dialog. */}
+      <div className="min-h-0 flex-1 px-6 flex flex-col gap-4 overflow-y-auto overscroll-contain">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Course code *</Label>
           <Input
             value={form.courseCode}
             onChange={(e) => {
@@ -246,8 +250,9 @@ function ActivityForm({ activity, onDone }: { activity: ActivityRow | null; onDo
       )}
 
       {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>}
+      </div>
 
-      <DialogFooter className="gap-2">
+      <DialogFooter className="gap-2 px-6 pb-6 pt-0 shrink-0">
         <div className="text-[11px] text-muted-foreground mr-auto flex items-center gap-1.5">
           <Bot className="w-3.5 h-3.5 text-orange-600" />
           Deterministic engine validates every save — AI never writes to the timetable.

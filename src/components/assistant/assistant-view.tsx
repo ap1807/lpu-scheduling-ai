@@ -32,12 +32,18 @@ export function AssistantView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useAppStore((s) => s.navigate);
   const role = (useSession().data?.user as { role?: string })?.role ?? 'STUDENT';
 
+  // Keep the newest message in view WITHOUT scrolling ancestors: scrollIntoView
+  // would also scroll the page behind the card when the user is mid-page.
+  // Honors prefers-reduced-motion (the CSS override cannot reach JS scrollTo).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (!el) return;
+    const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    el.scrollTo({ top: el.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
   }, [messages, busy]);
 
   const send = async (text: string) => {
@@ -68,7 +74,7 @@ export function AssistantView() {
             Answers are grounded in live database records — the assistant never fabricates courses, faculty, rooms or conflicts.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        <CardContent className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4" ref={scrollRef}>
           {messages.length === 0 && (
             <div className="text-center py-8 space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center mx-auto">
@@ -85,7 +91,7 @@ export function AssistantView() {
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="text-xs rounded-full border glass-chip px-3 py-1.5 text-muted-foreground hover:text-foreground transition"
+                    className="text-xs rounded-full border glass-chip px-3 py-1.5 text-muted-foreground hover:text-foreground transition active:scale-[0.97]"
                   >
                     {s}
                   </button>
@@ -95,7 +101,7 @@ export function AssistantView() {
           )}
 
           {messages.map((m, i) => (
-            <div key={i} className={cn('flex gap-2.5', m.role === 'user' && 'justify-end')}>
+            <div key={i} className={cn('flex gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200', m.role === 'user' && 'justify-end')}>
               {m.role === 'assistant' && (
                 <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0">
                   <Bot className="w-4 h-4 text-orange-600" />
@@ -122,13 +128,13 @@ export function AssistantView() {
               <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4 text-orange-600" />
               </div>
-              <div className="border glass-panel rounded-xl px-3.5 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="border glass-panel rounded-xl px-3.5 py-2.5 flex items-center gap-2 text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-200">
                 <Loader2 className="w-4 h-4 animate-spin text-orange-600" />
                 Retrieving schedule records and reasoning…
               </div>
             </div>
           )}
-          <div ref={bottomRef} />
+          <div />
         </CardContent>
 
         <div className="p-3 border-t flex gap-2">
@@ -176,7 +182,7 @@ export function AssistantView() {
               <button
                 key={s}
                 onClick={() => send(s)}
-                className="glass-ai w-full text-left text-[11px] rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2.5 py-1.5 text-muted-foreground hover:text-foreground transition"
+                className="glass-ai-chip w-full text-left text-[11px] rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2.5 py-1.5 text-muted-foreground hover:text-foreground transition active:scale-[0.99]"
               >
                 {s}
               </button>
@@ -222,7 +228,7 @@ function ReplyMeta({ reply, onNavigate }: { reply: AssistantReply2; onNavigate: 
             <button
               key={i}
               onClick={() => onNavigate(a.view, a.params)}
-              className="glass-ai text-[10px] inline-flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2 py-1 text-orange-700 dark:text-orange-300 hover:bg-orange-100"
+              className="glass-ai-chip text-[10px] inline-flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2 py-1 text-orange-700 dark:text-orange-300 hover:bg-orange-100 transition active:scale-[0.97]"
             >
               {a.label} <ArrowRight className="w-3 h-3" />
             </button>

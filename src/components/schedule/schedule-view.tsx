@@ -186,7 +186,7 @@ export function ScheduleView() {
       {params.activityId && <NavigateToActivityHint id={params.activityId} />}
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="calendar" className="gap-1.5"><CalendarDays className="w-4 h-4" /> Calendar</TabsTrigger>
           <TabsTrigger value="timetable" className="gap-1.5"><LayoutGrid className="w-4 h-4" /> Day timetable</TabsTrigger>
           <TabsTrigger value="table" className="gap-1.5"><Table2 className="w-4 h-4" /> Table</TabsTrigger>
@@ -232,7 +232,7 @@ export function ScheduleView() {
                           (a) => a.date === d && a.startMin < (h + 1) * 60 && a.endMin > h * 60 && a.startMin >= h * 60 && a.startMin < (h + 1) * 60
                         );
                         return (
-                          <div key={d + h} className="min-h-10 rounded border-l-2 border-transparent glass-well hover:bg-muted/40 transition p-0.5 space-y-0.5">
+                          <div key={d + h} className="min-h-10 rounded border-l-2 border-transparent glass-well hover:bg-muted/40 transition-colors duration-150 p-0.5 space-y-0.5">
                             {slots.map((a) => (
                               <ActivityChip key={a.id} a={a} canEdit={canEdit} onEdit={() => { setEditActivity(a); setFormOpen(true); }} onDuplicate={() => dup.mutate(a.id)} onDelete={() => del.mutate(a.id)} />
                             ))}
@@ -278,7 +278,7 @@ export function ScheduleView() {
               {dayActivities.length === 0 ? (
                 <EmptyState icon={CalendarDays} title="Nothing scheduled" description="No activities on this date (Sundays host university events only)." />
               ) : (
-                <div className="space-y-1.5 max-h-[560px] overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-[560px] overflow-y-auto overscroll-contain pr-1">
                   {dayActivities.map((a) => (
                     <div key={a.id} className={cn('rounded-md border border-l-4 p-3 flex flex-wrap items-center gap-x-4 gap-y-1', TYPE_COLORS[a.activityType] ?? TYPE_COLORS.OTHER)}>
                       <div className="font-mono text-xs tabular-nums text-muted-foreground w-24">{formatMin(a.startMin)}–{formatMin(a.endMin)}</div>
@@ -316,7 +316,7 @@ export function ScheduleView() {
               {activities.length === 0 ? (
                 <EmptyState icon={Table2} title="No matching records" description="Adjust filters or create a new activity." />
               ) : (
-                <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
+                <div className="overflow-x-auto overflow-y-auto max-h-[640px] overscroll-contain">
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-muted/90 backdrop-blur-md z-10">
                     <tr className="text-left">
@@ -329,7 +329,7 @@ export function ScheduleView() {
                     {activities.map((a) => (
                       <tr
                         key={a.id}
-                        className="hover:bg-muted/50 border-b last:border-0 cursor-pointer"
+                        className="hover:bg-muted/50 border-b last:border-0 cursor-pointer transition-colors duration-150"
                         onClick={() => { setEditActivity(a); setFormOpen(true); }}
                       >
                         <td className="px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground">{a.activityCode}</td>
@@ -386,7 +386,7 @@ export function ScheduleView() {
 function ActivityChip({ a, canEdit, onEdit, onDuplicate, onDelete }: { a: ActivityRow; canEdit: boolean; onEdit: () => void; onDuplicate: () => void; onDelete: () => void }) {
   return (
     <div
-      className={cn('rounded border-l-2 px-1.5 py-1 text-[10px] leading-tight cursor-pointer hover:shadow-sm', TYPE_COLORS[a.activityType] ?? TYPE_COLORS.OTHER)}
+      className={cn('rounded border-l-2 px-1.5 py-1 text-[10px] leading-tight cursor-pointer hover:shadow-sm transition-shadow duration-150', TYPE_COLORS[a.activityType] ?? TYPE_COLORS.OTHER)}
       onClick={onEdit}
       title={`${a.courseCode} ${a.sectionCode} · ${a.courseName}\n${formatMin(a.startMin)}–${formatMin(a.endMin)} · ${a.roomCode} (${a.blockCode})\n${a.facultyName} · ${a.studentGroupCode} · ${a.capacityRequired} seats${a.notes ? `\n📝 ${a.notes}` : ''}`}
     >

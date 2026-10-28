@@ -90,7 +90,7 @@ export function LoginView() {
       </header>
 
       <main className="relative flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-5xl grid lg:grid-cols-[400px_1fr] gap-8">
+        <div className="w-full max-w-5xl grid lg:grid-cols-[400px_1fr] gap-8 animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export function LoginView() {
                   key={acc.email}
                   onClick={() => quick.mutate({ email: acc.email, password: acc.password })}
                   disabled={quick.isPending}
-                  className="text-left rounded-xl border glass-panel glass-hover p-4 hover:border-orange-400 transition-all group"
+                  className="text-left rounded-xl border glass-panel glass-hover p-4 hover:border-orange-400 transition group active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-2">
                     <acc.icon className="w-4 h-4 text-orange-600" />

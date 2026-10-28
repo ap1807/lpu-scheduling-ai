@@ -224,7 +224,11 @@ export function WhatIfView() {
               </CardContent>
             </Card>
           )}
-          {result && <SimulationResults result={result} />}
+          {result && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <SimulationResults result={result} />
+            </div>
+          )}
 
           {/* saved scenarios */}
           {(scenarios?.scenarios.length ?? 0) > 0 && (
@@ -385,7 +389,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
               <GitBranch className="w-3.5 h-3.5" /> Dependency chain (cascading analysis)
               {c.hasCascadingRisk && <span className="text-red-600 normal-case font-medium">— hard cascade risk detected</span>}
             </div>
-            <div className="glass-well rounded-lg border border-transparent p-3 space-y-1.5 max-h-60 overflow-y-auto">
+            <div className="glass-well rounded-lg border border-transparent p-3 space-y-1.5 max-h-60 overflow-y-auto overscroll-contain">
               {c.chain.map((n, i) => (
                 <div key={i} className="flex gap-2 items-start text-xs">
                   <span className={cn(

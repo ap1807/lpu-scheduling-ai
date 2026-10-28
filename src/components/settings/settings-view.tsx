@@ -107,7 +107,7 @@ export function SettingsView() {
 
   return (
     <Tabs defaultValue="rules" className="space-y-4">
-      <TabsList>
+      <TabsList className="flex-wrap h-auto">
         <TabsTrigger value="rules" className="gap-1.5"><Cog className="w-4 h-4" /> Scheduling rules</TabsTrigger>
         <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Users &amp; roles</TabsTrigger>
         <TabsTrigger value="system" className="gap-1.5"><Settings className="w-4 h-4" /> System</TabsTrigger>
@@ -189,7 +189,7 @@ export function SettingsView() {
             {!users || users.users.length === 0 ? (
               <EmptyState icon={Users} title="No users" description="User accounts appear here." />
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overscroll-x-contain">
                 <table className="w-full text-xs">
                   <thead className="bg-muted">
                     <tr className="text-left">
@@ -200,7 +200,7 @@ export function SettingsView() {
                   </thead>
                   <tbody>
                     {users.users.map((u) => (
-                      <tr key={u.id} className="border-b hover:bg-muted/50">
+                      <tr key={u.id} className="border-b hover:bg-muted/50 transition-colors duration-150">
                         <td className="px-3 py-2 font-medium">{u.name}</td>
                         <td className="px-3 py-2 font-mono">{u.email}</td>
                         <td className="px-3 py-2">

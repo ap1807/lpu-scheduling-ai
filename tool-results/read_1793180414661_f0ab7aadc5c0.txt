@@ -1,0 +1,535 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState } from 'react';
+     4→     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+     5→     5→import { useSession } from 'next-auth/react';
+     6→     6→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+     7→     7→import { Button } from '@/components/ui/button';
+     8→     8→import { Badge } from '@/components/ui/badge';
+     9→     9→import { Textarea } from '@/components/ui/textarea';
+    10→    10→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+    11→    11→import { SeverityBadge, StatusBadge, TypeBadge, ActorBadge, EmptyState } from '@/components/shared/ui-bits';
+    12→    12→import { fetchConflictDetail, runResolutionAgent, decideResolution, type ConflictListRow, type ConflictDetail as CD } from '@/lib/client-api';
+    13→    13→import { useAppStore } from '@/store/app-store';
+    14→    14→import { useToast } from '@/hooks/use-toast';
+    15→    15→import { cn } from '@/lib/utils';
+    16→    16→import {
+    17→    17→  ArrowLeft, Bot, Cog, UserCheck, ChevronDown, ChevronUp, Loader2, Sparkles, ShieldCheck, XCircle,
+    18→    18→  CheckCircle2, GitBranch, AlertTriangle, FileSearch, Wrench, ListChecks, Trophy, BrainCircuit, History,
+    19→    19→} from 'lucide-react';
+    20→    20→
+    21→    21→const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+    22→    22→  understanding: FileSearch,
+    23→    23→  identification: Cog,
+    24→    24→  'root-cause': BrainCircuit,
+    25→    25→  impact: GitBranch,
+    26→    26→  planning: Wrench,
+    27→    27→  candidates: Sparkles,
+    28→    28→  validation: ShieldCheck,
+    29→    29→  scoring: Trophy,
+    30→    30→  explanation: Bot,
+    31→    31→  approval: UserCheck,
+    32→    32→};
+    33→    33→
+    34→    34→export function ConflictDetail({ conflict, onBack, onChanged }: { conflict: ConflictListRow; onBack: () => void; onChanged: () => void }) {
+    35→    35→  const { data, isLoading, refetch } = useQuery({ queryKey: ['conflict', conflict.id], queryFn: () => fetchConflictDetail(conflict.id), enabled: !conflict.id.startsWith('live-') });
+    36→    36→  const [running, setRunning] = useState(false);
+    37→    37→  const [note, setNote] = useState('');
+    38→    38→  const role = (useSession().data?.user as { role?: string })?.role ?? 'STUDENT';
+    39→    39→  const canAnalyze = role === 'ADMIN' || role === 'SCHEDULER';
+    40→    40→  const canApprove = role === 'ADMIN';
+    41→    41→  const queryClient = useQueryClient();
+    42→    42→  const { toast } = useToast();
+    43→    43→  const navigate = useAppStore((s) => s.navigate);
+    44→    44→
+    45→    45→  const agent = useMutation({
+    46→    46→    mutationFn: () => runResolutionAgent(conflict.id),
+    47→    47→    onSuccess: () => {
+    48→    48→      toast({ title: 'Agentic AI analysis complete', description: 'Candidates validated by the engine and awaiting human approval.' });
+    49→    49→      refetch();
+    50→    50→      queryClient.invalidateQueries({ queryKey: ['overview'] });
+    51→    51→      onChanged();
+    52→    52→    },
+    53→    53→    onError: (e: Error) => toast({ title: 'Analysis failed', description: e.message, variant: 'destructive' }),
+    54→    54→  });
+    55→    55→
+    56→    56→  const decide = async (d: 'APPROVE' | 'REJECT', requestId: string, candidateId?: string) => {
+    57→    57→    try {
+    58→    58→      const res = await decideResolution(requestId, d, candidateId, note);
+    59→    59→      if (d === 'APPROVE' && res.applied && res.verification) {
+    60→    60→        toast({
+    61→    61→          title: 'Change applied to the official timetable',
+    62→    62→          description: `Post-change verification: original conflict ${res.verification.originalConflictResolved ? 'RESOLVED ✓' : 'STILL PRESENT'} · ${res.verification.newConflictsIntroduced.length} new conflict(s) · ${res.verification.postDetection.total} total.`,
+    63→    63→        });
+    64→    64→      } else if (d === 'REJECT') {
+    65→    65→        toast({ title: 'Recommendation rejected', description: 'No changes were applied to the timetable.' });
+    66→    66→      } else if (!res.applied) {
+    67→    67→        toast({ title: 'Application blocked', description: res.reason ?? 'Engine re-validation failed', variant: 'destructive' });
+    68→    68→      }
+    69→    69→      refetch();
+    70→    70→      queryClient.invalidateQueries({ queryKey: ['conflicts'] });
+    71→    71→      queryClient.invalidateQueries({ queryKey: ['overview'] });
+    72→    72→      queryClient.invalidateQueries({ queryKey: ['audit'] });
+    73→    73→      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    74→    74→      onChanged();
+    75→    75→    } catch (e) {
+    76→    76→      toast({ title: 'Decision failed', description: e instanceof Error ? e.message : 'error', variant: 'destructive' });
+    77→    77→    }
+    78→    78→  };
+    79→    79→
+    80→    80→  if (isLoading) {
+    81→    81→    return <div className="space-y-3"><Loader2 className="w-6 h-6 animate-spin text-orange-600" /><div className="text-sm text-muted-foreground">Loading conflict analysis…</div></div>;
+    82→    82→  }
+    83→    83→
+    84→    84→  if (conflict.id.startsWith('live-')) {
+    85→    85→    return (
+    86→    86→      <div className="space-y-4">
+    87→    87→        <BackButton onBack={onBack} />
+    88→    88→        <Card>
+    89→    89→          <CardHeader>
+    90→    90→            <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+    91→    91→              <TypeBadge type={conflict.conflictType} /> <SeverityBadge severity={conflict.severity} /> <StatusBadge status={conflict.status} />
+    92→    92→            </CardTitle>
+    93→    93→          </CardHeader>
+    94→    94→          <CardContent className="space-y-3 text-sm">
+    95→    95→            <div>{conflict.rootCause}</div>
+    96→    96→            <div className="text-muted-foreground">{conflict.directImpact}</div>
+    97→    97→            <div className="text-xs text-muted-foreground">This conflict was detected live but is not yet persisted — re-run conflict detection to register it.</div>
+    98→    98→            {canAnalyze && (
+    99→    99→              <Button variant="outline" onClick={async () => {
+   100→   100→                const { runDetection } = await import('@/lib/client-api');
+   101→   101→                await runDetection();
+   102→   102→                queryClient.invalidateQueries({ queryKey: ['conflicts'] });
+   103→   103→              }}>Register via engine re-scan</Button>
+   104→   104→            )}
+   105→   105→          </CardContent>
+   106→   106→        </Card>
+   107→   107→      </div>
+   108→   108→    );
+   109→   109→  }
+   110→   110→
+   111→   111→  const d: CD | undefined = data;
+   112→   112→  if (!d) return <EmptyState icon={AlertTriangle} title="Conflict not found" description="It may have been resolved and removed by a re-scan." />;
+   113→   113→
+   114→   114→  const latestRequest = d.resolutionRequests[0];
+   115→   115→  const hasAwaiting = latestRequest?.status === 'AWAITING_APPROVAL';
+   116→   116→  const r = conflict.affectedResources;
+   117→   117→
+   118→   118→  return (
+   119→   119→    <div className="space-y-4">
+   120→   120→      <BackButton onBack={onBack} />
+   121→   121→
+   122→   122→      {/* ===== header ===== */}
+   123→   123→      <Card className="border-l-4" style={{ borderLeftColor: conflict.severity === 'CRITICAL' ? '#ef4444' : conflict.severity === 'HIGH' ? '#f97316' : '#f59e0b' }}>
+   124→   124→        <CardHeader className="pb-2">
+   125→   125→          <div className="flex flex-wrap items-center gap-2">
+   126→   126→            <span className="font-mono text-xs text-muted-foreground">{d.conflict.code}</span>
+   127→   127→            <TypeBadge type={d.conflict.conflictType} />
+   128→   128→            <TypeBadge type={d.conflict.category} />
+   129→   129→            <SeverityBadge severity={d.conflict.severity} />
+   130→   130→            <StatusBadge status={d.conflict.status} />
+   131→   131→          </div>
+   132→   132→          <CardTitle className="text-base leading-snug mt-2">{d.conflict.rootCause}</CardTitle>
+   133→   133→          <CardDescription>{d.conflict.directImpact}</CardDescription>
+   134→   134→        </CardHeader>
+   135→   135→        <CardContent className="space-y-4">
+   136→   136→          {/* involved schedule records */}
+   137→   137→          <div>
+   138→   138→            <SectionLabel icon={FileSearch} label={`Involved schedule records (${d.activities.length})`} />
+   139→   139→            <div className="space-y-1.5">
+   140→   140→              {d.activities.map((a) => (
+   141→   141→                <div key={a.id} className="glass-panel glass-hover rounded-lg border p-3 flex flex-wrap gap-x-4 gap-y-1 items-center text-sm">
+   142→   142→                  <div className="min-w-0 flex-1">
+   143→   143→                    <div className="font-semibold">
+   144→   144→                      {a.courseCode} {a.sectionCode} <span className="text-muted-foreground font-normal">· {a.courseName}</span>
+   145→   145→                    </div>
+   146→   146→                    <div className="text-xs text-muted-foreground">
+   147→   147→                      {a.day} {a.date} · {a.time} · {a.roomCode}{a.roomName ? ` (${a.roomName})` : ''} · {a.blockCode} · {a.facultyName} · {a.studentGroupCode}
+   148→   148→                      {a.roomCapacity !== undefined && ` · ${a.capacityRequired}/${a.roomCapacity} seats`}
+   149→   149→                    </div>
+   150→   150→                    {a.notes && <div className="text-[11px] text-muted-foreground mt-0.5 italic">📝 {a.notes}</div>}
+   151→   151→                  </div>
+   152→   152→                  <div className="flex gap-1.5">
+   153→   153→                    <TypeBadge type={a.activityType} />
+   154→   154→                    <Badge variant="outline" className="font-mono text-[10px]">{a.activityCode}</Badge>
+   155→   155→                    <Button
+   156→   156→                      variant="ghost"
+   157→   157→                      size="sm"
+   158→   158→                      className="h-6 text-xs"
+   159→   159→                      onClick={() => navigate('schedules', { activityId: a.id })}
+   160→   160→                    >
+   161→   161→                      View in schedule
+   162→   162→                    </Button>
+   163→   163→                  </div>
+   164→   164→                </div>
+   165→   165→              ))}
+   166→   166→            </div>
+   167→   167→          </div>
+   168→   168→
+   169→   169→          {/* affected resources */}
+   170→   170→          <div>
+   171→   171→            <SectionLabel icon={AlertTriangle} label="Affected resources" />
+   172→   172→            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+   173→   173→              <ResBox label="Rooms" items={r.rooms} />
+   174→   174→              <ResBox label="Faculty" items={r.faculty} />
+   175→   175→              <ResBox label="Student groups" items={r.studentGroups} />
+   176→   176→              <ResBox label="Courses" items={r.courses} />
+   177→   177→              <ResBox label="Academic blocks" items={r.blocks} />
+   178→   178→              <ResBox label="Dates" items={d.conflict.affectedResources.dates ?? []} />
+   179→   179→            </div>
+   180→   180→          </div>
+   181→   181→
+   182→   182→          {/* cascade chain */}
+   183→   183→          <div>
+   184→   184→            <SectionLabel icon={GitBranch} label="Cascading impact analysis (engine)" />
+   185→   185→            <div className="glass-panel rounded-xl border p-3 space-y-2">
+   186→   186→              {d.conflict.cascadingImpact.length === 0 ? (
+   187→   187→                <div className="text-xs text-muted-foreground">No cascading effects recorded.</div>
+   188→   188→              ) : (
+   189→   189→                d.conflict.cascadingImpact.map((n, i) => (
+   190→   190→                  <div key={i} className="flex gap-2 items-start">
+   191→   191→                    <Badge variant="outline" className={cn('text-[10px] shrink-0 mt-0.5 font-mono', n.level === 1 ? 'border-red-300 bg-red-50 text-red-700 dark:bg-red-950/40' : 'border-slate-300 bg-slate-50 dark:bg-slate-800')}>L{n.level}</Badge>
+   192→   192→                    <div className="text-xs min-w-0">
+   193→   193→                      <span className="font-semibold">{n.resource}</span> — <span className="text-muted-foreground">{n.description}</span>
+   194→   194→                      {n.conflictType && <Badge variant="outline" className="ml-1.5 text-[9px]">{n.conflictType}</Badge>}
+   195→   195→                    </div>
+   196→   196→                  </div>
+   197→   197→                ))
+   198→   198→              )}
+   199→   199→            </div>
+   200→   200→          </div>
+   201→   201→        </CardContent>
+   202→   202→      </Card>
+   203→   203→
+   204→   204→      {/* ===== agentic AI resolution workflow ===== */}
+   205→   205→      <Card>
+   206→   206→        <CardHeader className="pb-3">
+   207→   207→          <div className="flex flex-wrap items-center justify-between gap-2">
+   208→   208→            <div>
+   209→   209→              <CardTitle className="text-base flex items-center gap-2">
+   210→   210→                <Bot className="w-5 h-5 text-orange-600" /> Agentic AI Resolution Workflow
+   211→   211→              </CardTitle>
+   212→   212→              <CardDescription>
+   213→   213→                10-stage pipeline: engine facts → AI reasoning → deterministic validation → ranking → human approval
+   214→   214→              </CardDescription>
+   215→   215→            </div>
+   216→   216→            {canAnalyze && (
+   217→   217→              <Button
+   218→   218→                onClick={() => agent.mutate()}
+   219→   219→                disabled={agent.isPending || hasAwaiting}
+   220→   220→                className="bg-orange-600 hover:bg-orange-700"
+   221→   221→              >
+   222→   222→                {agent.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+   223→   223→                {agent.isPending ? 'Running agentic analysis…' : hasAwaiting ? 'Awaiting approval below' : d.resolutionRequests.length > 0 ? 'Re-run AI analysis' : 'Run AI analysis'}
+   224→   224→              </Button>
+   225→   225→            )}
+   226→   226→          </div>
+   227→   227→        </CardHeader>
+   228→   228→        <CardContent className="space-y-4">
+   229→   229→          {d.resolutionRequests.length === 0 && !agent.isPending && (
+   230→   230→            <EmptyState
+   231→   231→              icon={Bot}
+   232→   232→              title="No AI analysis yet"
+   233→   233→              description={canAnalyze ? 'Run the agentic workflow: the engine re-verifies the conflict, the AI plans and narrates resolutions, candidates are validated against the complete schedule, ranked, and sent for your approval.' : 'An authorized scheduler or administrator must run the AI analysis.'}
+   234→   234→            />
+   235→   235→          )}
+   236→   236→
+   237→   237→          {agent.isPending && <PipelineSkeleton />}
+   238→   238→
+   239→   239→          {latestRequest && (
+   240→   240→            <div className="space-y-4">
+   241→   241→              {/* stages */}
+   242→   242→              <StagePipeline stages={latestRequest.stages} />
+   243→   243→
+   244→   244→              {/* narrative */}
+   245→   245→              {latestRequest.narrative && (
+   246→   246→                <div className="glass-ai rounded-xl border border-orange-200 bg-orange-50/60 dark:bg-orange-950/30 dark:border-orange-900 p-4">
+   247→   247→                  <div className="flex items-center gap-2 text-sm font-semibold text-orange-800 dark:text-orange-300 mb-2">
+   248→   248→                    <BrainCircuit className="w-4 h-4" /> AI root-cause narrative
+   249→   249→                    <Badge variant="outline" className="text-[10px] font-normal">{latestRequest.narrative ? 'engine facts + LLM' : ''}</Badge>
+   250→   250→                  </div>
+   251→   251→                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{latestRequest.narrative}</div>
+   252→   252→                </div>
+   253→   253→              )}
+   254→   254→
+   255→   255→              {/* candidates */}
+   256→   256→              <div>
+   257→   257→                <SectionLabel icon={ListChecks} label={`Candidate solutions (${latestRequest.candidates.length}) — engine-validated & ranked`} />
+   258→   258→                <div className="space-y-2">
+   259→   259→                  {latestRequest.candidates.map((c) => (
+   260→   260→                    <CandidateCard
+   261→   261→                      key={c.id}
+   262→   262→                      c={c}
+   263→   263→                      isRecommended={c.status === 'SELECTED'}
+   264→   264→                      canApprove={canApprove && hasAwaiting}
+   265→   265→                      onApprove={() => decide('APPROVE', latestRequest.id, c.id)}
+   266→   266→                    />
+   267→   267→                  ))}
+   268→   268→                </div>
+   269→   269→              </div>
+   270→   270→
+   271→   271→              {/* approval / rejection */}
+   272→   272→              {hasAwaiting && (
+   273→   273→                <div className="glass-panel rounded-xl border p-4 space-y-3">
+   274→   274→                  <div className="flex items-center gap-2 text-sm font-semibold">
+   275→   275→                    <UserCheck className="w-4 h-4 text-emerald-600" /> Human approval required
+   276→   276→                  </div>
+   277→   277→                  <div className="text-xs text-muted-foreground leading-relaxed">
+   278→   278→                    The AI cannot modify the official LPU timetable. {canApprove ? 'As System Administrator you may approve the selected recommendation or reject it.' : 'Only a System Administrator can approve; you may reject or request re-analysis.'}
+   279→   279→                  </div>
+   280→   280→                  <Textarea placeholder="Decision note (recorded in the audit trail)" value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
+   281→   281→                  <div className="flex flex-wrap gap-2">
+   282→   282→                    {canApprove && (
+   283→   283→                      <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => decide('APPROVE', latestRequest.id)}>
+   284→   284→                        <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve &amp; apply selected recommendation
+   285→   285→                      </Button>
+   286→   286→                    )}
+   287→   287→                    <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => decide('REJECT', latestRequest.id)}>
+   288→   288→                      <XCircle className="w-4 h-4 mr-1.5" /> Reject
+   289→   289→                    </Button>
+   290→   290→                  </div>
+   291→   291→                </div>
+   292→   292→              )}
+   293→   293→
+   294→   294→              {/* decision outcome */}
+   295→   295→              {latestRequest.status !== 'AWAITING_APPROVAL' && latestRequest.decidedBy && (
+   296→   296→                <div className={cn('glass-tint rounded-xl border p-4 text-sm', latestRequest.status === 'APPLIED' || latestRequest.status === 'APPROVED' ? 'border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/30 dark:border-emerald-900' : 'border-slate-200 bg-slate-50 dark:bg-slate-900')}>
+   297→   297→                  <div className="font-semibold flex items-center gap-2">
+   298→   298→                    {latestRequest.status === 'APPLIED' || latestRequest.status === 'APPROVED' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4" />}
+   299→   299→                    {latestRequest.status === 'APPLIED' ? 'Applied to official schedule' : latestRequest.status === 'REJECTED' ? 'Rejected' : latestRequest.status}
+   300→   300→                  </div>
+   301→   301→                  <div className="text-xs text-muted-foreground mt-1">
+   302→   302→                    Decided by {latestRequest.decidedBy} · {latestRequest.decidedAt ? new Date(latestRequest.decidedAt).toLocaleString() : ''}
+   303→   303→                    {latestRequest.decisionNote ? ` — "${latestRequest.decisionNote}"` : ''}
+   304→   304→                  </div>
+   305→   305→                  {d.conflict.resolutionNote && <div className="text-xs mt-2">{d.conflict.resolutionNote}</div>}
+   306→   306→                </div>
+   307→   307→              )}
+   308→   308→
+   309→   309→              {/* history */}
+   310→   310→              {d.resolutionRequests.length > 1 && (
+   311→   311→                <Accordion type="single" collapsible>
+   312→   312→                  <AccordionItem value="history">
+   313→   313→                    <AccordionTrigger className="text-sm">
+   314→   314→                      <span className="flex items-center gap-2"><History className="w-4 h-4" /> Previous analyses ({d.resolutionRequests.length - 1})</span>
+   315→   315→                    </AccordionTrigger>
+   316→   316→                    <AccordionContent className="space-y-2">
+   317→   317→                      {d.resolutionRequests.slice(1).map((req) => (
+   318→   318→                        <div key={req.id} className="rounded border p-3 text-xs space-y-1">
+   319→   319→                          <div className="flex items-center gap-2">
+   320→   320→                            <span className="font-mono text-muted-foreground">{req.code}</span>
+   321→   321→                            <StatusBadge status={req.status} />
+   322→   322→                            <span className="text-muted-foreground">{new Date(req.createdAt).toLocaleString()} · by {req.requestedByName}</span>
+   323→   323→                          </div>
+   324→   324→                          <div className="text-muted-foreground">{req.candidates.length} candidates · decision: {req.decidedBy ?? 'pending'}</div>
+   325→   325→                        </div>
+   326→   326→                      ))}
+   327→   327→                    </AccordionContent>
+   328→   328→                  </AccordionItem>
+   329→   329→                </Accordion>
+   330→   330→              )}
+   331→   331→            </div>
+   332→   332→          )}
+   333→   333→        </CardContent>
+   334→   334→      </Card>
+   335→   335→
+   336→   336→      <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+   337→   337→        <Cog className="w-3.5 h-3.5" />
+   338→   338→        Engine verification: {d.engineVerification.detectionPass} — {d.engineVerification.verifiedBy}
+   339→   339→      </div>
+   340→   340→    </div>
+   341→   341→  );
+   342→   342→}
+   343→   343→
+   344→   344→function BackButton({ onBack }: { onBack: () => void }) {
+   345→   345→  return (
+   346→   346→    <Button variant="ghost" onClick={onBack} className="gap-1.5 -ml-2">
+   347→   347→      <ArrowLeft className="w-4 h-4" /> Back to Conflict Center
+   348→   348→    </Button>
+   349→   349→  );
+   350→   350→}
+   351→   351→
+   352→   352→function SectionLabel({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
+   353→   353→  return (
+   354→   354→    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+   355→   355→      <Icon className="w-3.5 h-3.5" /> {label}
+   356→   356→    </div>
+   357→   357→  );
+   358→   358→}
+   359→   359→
+   360→   360→function ResBox({ label, items }: { label: string; items: string[] }) {
+   361→   361→  return (
+   362→   362→    <div className="glass-panel rounded-lg border p-2.5">
+   363→   363→      <div className="text-[10px] font-semibold text-muted-foreground uppercase">{label}</div>
+   364→   364→      <div className="flex flex-wrap gap-1 mt-1">
+   365→   365→        {items.length === 0 ? <span className="text-[10px] text-muted-foreground">—</span> : items.map((i) => (
+   366→   366→          <Badge key={i} variant="secondary" className="text-[10px] font-mono">{i}</Badge>
+   367→   367→        ))}
+   368→   368→      </div>
+   369→   369→    </div>
+   370→   370→  );
+   371→   371→}
+   372→   372→
+   373→   373→function StagePipeline({ stages }: { stages: CD['resolutionRequests'][0]['stages'] }) {
+   374→   374→  const [openStage, setOpenStage] = useState<number | null>(null);
+   375→   375→  return (
+   376→   376→    <div className="rounded-lg border divide-y">
+   377→   377→      {stages.map((s) => {
+   378→   378→        const Icon = STAGE_ICONS[s.key] ?? Cog;
+   379→   379→        return (
+   380→   380→          <div key={s.stage} className="glass-well rounded-lg border border-transparent p-3">
+   381→   381→            <button className="w-full flex items-center gap-3 text-left" onClick={() => setOpenStage(openStage === s.stage ? null : s.stage)}>
+   382→   382→              <div className={cn(
+   383→   383→                'w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold',
+   384→   384→                s.actor === 'ENGINE' ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' :
+   385→   385→                s.actor === 'AGENT' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-300' :
+   386→   386→                'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300'
+   387→   387→              )}>
+   388→   388→                <Icon className="w-4 h-4" />
+   389→   389→              </div>
+   390→   390→              <div className="min-w-0 flex-1">
+   391→   391→                <div className="flex flex-wrap items-center gap-2">
+   392→   392→                  <span className="text-sm font-medium">{s.stage}. {s.title}</span>
+   393→   393→                  <ActorBadge actor={s.actor} />
+   394→   394→                  {s.status === 'AWAITING' && <StatusBadge status="AWAITING_APPROVAL" />}
+   395→   395→                </div>
+   396→   396→                <div className="text-xs text-muted-foreground line-clamp-1">{s.summary}</div>
+   397→   397→              </div>
+   398→   398→              <div className="text-[10px] text-muted-foreground hidden sm:block tabular-nums">{new Date(s.at).toLocaleTimeString()}</div>
+   399→   399→              {openStage === s.stage ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+   400→   400→            </button>
+   401→   401→            {openStage === s.stage && s.detail && (
+   402→   402→              <pre className="glass-well mt-2 text-[11px] whitespace-pre-wrap font-mono rounded-md p-2.5 max-h-64 overflow-y-auto">{s.detail}</pre>
+   403→   403→            )}
+   404→   404→          </div>
+   405→   405→        );
+   406→   406→      })}
+   407→   407→    </div>
+   408→   408→  );
+   409→   409→}
+   410→   410→
+   411→   411→function CandidateCard({ c, isRecommended, canApprove, onApprove }: {
+   412→   412→  c: CD['resolutionRequests'][0]['candidates'][0];
+   413→   413→  isRecommended: boolean;
+   414→   414→  canApprove: boolean;
+   415→   415→  onApprove: () => void;
+   416→   416→}) {
+   417→   417→  const [showChecks, setShowChecks] = useState(false);
+   418→   418→  return (
+   419→   419→    <div className={cn(
+   420→   420→      'rounded-xl border glass-panel p-3.5 space-y-2.5',
+   421→   421→      isRecommended && 'glass-ai border-orange-300 bg-orange-50/50 dark:bg-orange-950/25 dark:border-orange-800 ring-1 ring-orange-200',
+   422→   422→      !c.valid && 'opacity-75 border-red-200'
+   423→   423→    )}>
+   424→   424→      <div className="flex flex-wrap items-center gap-2">
+   425→   425→        <Badge variant="outline" className={cn('font-mono text-[10px]', c.rank === 1 ? 'bg-orange-100 border-orange-300' : '')}>#{c.rank}</Badge>
+   426→   426→        <StatusBadge status={c.status} />
+   427→   427→        <TypeBadge type={c.solutionType} />
+   428→   428→        {c.valid ? (
+   429→   429→          <Badge variant="outline" className="bg-emerald-50 border-emerald-300 text-emerald-700 text-[10px] gap-1">
+   430→   430→            <ShieldCheck className="w-3 h-3" /> ENGINE-VALIDATED · score {c.score}/100
+   431→   431→          </Badge>
+   432→   432→        ) : (
+   433→   433→          <Badge variant="outline" className="bg-red-50 border-red-300 text-red-700 text-[10px] gap-1">
+   434→   434→            <XCircle className="w-3 h-3" /> REJECTED BY ENGINE
+   435→   435→          </Badge>
+   436→   436→        )}
+   437→   437→        {isRecommended && <Badge className="bg-orange-600 text-[10px] gap-1"><Sparkles className="w-3 h-3" /> AI RECOMMENDATION</Badge>}
+   438→   438→        {canApprove && isRecommended && (
+   439→   439→          <Button size="sm" className="ml-auto h-7 bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={onApprove}>
+   440→   440→            <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve this
+   441→   441→          </Button>
+   442→   442→        )}
+   443→   443→      </div>
+   444→   444→
+   445→   445→      <div className="text-sm font-medium">{c.title}</div>
+   446→   446→
+   447→   447→      {/* changes */}
+   448→   448→      <div className="space-y-1">
+   449→   449→        {c.changes.map((ch, i) => (
+   450→   450→          <div key={i} className="text-xs flex flex-wrap items-center gap-1.5">
+   451→   451→            <Badge variant="secondary" className="font-mono text-[10px]">{ch.activityCode}</Badge>
+   452→   452→            <span className="text-muted-foreground">{ch.displayLabel}:</span>
+   453→   453→            <span className="line-through text-red-500/80">{ch.displayFrom ?? String(ch.from)}</span>
+   454→   454→            <span className="text-muted-foreground">→</span>
+   455→   455→            <span className="font-semibold text-emerald-700 dark:text-emerald-400">{ch.displayTo ?? String(ch.to)}</span>
+   456→   456→          </div>
+   457→   457→        ))}
+   458→   458→      </div>
+   459→   459→
+   460→   460→      {/* benefits / side effects */}
+   461→   461→      <div className="grid sm:grid-cols-2 gap-2 text-xs">
+   462→   462→        {c.expectedBenefits.length > 0 && (
+   463→   463→          <div className="rounded border bg-emerald-50/50 dark:bg-emerald-950/25 p-2">
+   464→   464→            <div className="font-semibold text-emerald-700 dark:text-emerald-400 text-[10px] uppercase mb-1">Expected benefits</div>
+   465→   465→            <ul className="space-y-0.5">
+   466→   466→              {c.expectedBenefits.map((b, i) => <li key={i} className="text-muted-foreground">✓ {b}</li>)}
+   467→   467→            </ul>
+   468→   468→          </div>
+   469→   469→        )}
+   470→   470→        {c.sideEffects.length > 0 && (
+   471→   471→          <div className="rounded border bg-amber-50/50 dark:bg-amber-950/25 p-2">
+   472→   472→            <div className="font-semibold text-amber-700 dark:text-amber-400 text-[10px] uppercase mb-1">Side effects</div>
+   473→   473→            <ul className="space-y-0.5">
+   474→   474→              {c.sideEffects.map((s, i) => <li key={i} className="text-muted-foreground">⚠ {s}</li>)}
+   475→   475→            </ul>
+   476→   476→          </div>
+   477→   477→        )}
+   478→   478→      </div>
+   479→   479→
+   480→   480→      {/* AI reasoning */}
+   481→   481→      {c.reasoning && (
+   482→   482→        <div className="glass-well rounded-lg border border-transparent p-2.5">
+   483→   483→          <div className="text-[10px] font-semibold uppercase text-muted-foreground mb-1 flex items-center gap-1">
+   484→   484→            <Bot className="w-3 h-3 text-orange-600" /> AI explanation
+   485→   485→          </div>
+   486→   486→          <div className="text-xs whitespace-pre-wrap leading-relaxed">{c.reasoning}</div>
+   487→   487→        </div>
+   488→   488→      )}
+   489→   489→
+   490→   490→      {/* validation report */}
+   491→   491→      <button className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" onClick={() => setShowChecks(!showChecks)}>
+   492→   492→        <ShieldCheck className="w-3.5 h-3.5" />
+   493→   493→        Validation report ({c.validation.checks.filter((x) => x.passed).length}/{c.validation.checks.length} checks passed
+   494→   494→        {c.validation.newHardConflicts.length > 0 ? `, ${c.validation.newHardConflicts.length} new hard conflict(s)` : ''}
+   495→   495→        {c.validation.newSoftConflicts.length > 0 ? `, ${c.validation.newSoftConflicts.length} new soft` : ''})
+   496→   496→        {showChecks ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+   497→   497→      </button>
+   498→   498→      {showChecks && (
+   499→   499→        <div className="glass-well rounded-lg border border-transparent p-2.5 space-y-1">
+   500→   500→          {c.validation.checks.map((chk, i) => (
+   501→   501→            <div key={i} className="flex items-start gap-1.5 text-xs">
+   502→   502→              {chk.passed ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />}
+   503→   503→              <div>
+   504→   504→                <span className="font-medium">{chk.name}</span>
+   505→   505→                <span className="text-muted-foreground"> — {chk.detail}</span>
+   506→   506→              </div>
+   507→   507→            </div>
+   508→   508→          ))}
+   509→   509→          {c.validation.newHardConflicts.map((h, i) => (
+   510→   510→            <div key={`h${i}`} className="text-xs text-red-600 flex gap-1.5">
+   511→   511→              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> New hard conflict: {h.description}
+   512→   512→            </div>
+   513→   513→          ))}
+   514→   514→        </div>
+   515→   515→      )}
+   516→   516→    </div>
+   517→   517→  );
+   518→   518→}
+   519→   519→
+   520→   520→function PipelineSkeleton() {
+   521→   521→  return (
+   522→   522→    <div className="rounded-lg border divide-y">
+   523→   523→      {Array.from({ length: 10 }).map((_, i) => (
+   524→   524→        <div key={i} className="p-3 flex items-center gap-3">
+   525→   525→          <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+   526→   526→          <div className="flex-1 space-y-1.5">
+   527→   527→            <div className="h-3 bg-muted rounded animate-pulse w-48" />
+   528→   528→            <div className="h-2.5 bg-muted rounded animate-pulse w-full max-w-md" />
+   529→   529→          </div>
+   530→   530→        </div>
+   531→   531→      ))}
+   532→   532→    </div>
+   533→   533→  );
+   534→   534→}
+   535→   535→

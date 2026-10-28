@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import { useAppStore, VIEW_TITLES, type ViewKey } from '@/store/app-store';
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   LayoutDashboard, CalendarDays, AlertTriangle, GitBranch, Bot, ScrollText, Settings,
   LogOut, Menu, Moon, Sun, Building2, ShieldCheck, RefreshCw,
@@ -42,6 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const role = (session?.user as { role?: string })?.role ?? 'STUDENT';
   const nav = NAV.filter((n) => n.roles.includes(role));
   const title = VIEW_TITLES[view];
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     // ensure the demo dataset exists on first load
@@ -52,23 +53,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (!nav.some((n) => n.key === view)) navigate('dashboard');
   }, [role]);
 
+  // Smooth navigation feedback: entering a view always starts from its top —
+  // no stale mid-page scroll position carried across views. Instant (not
+  // smooth) per accessibility guidance for large programmatic jumps.
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [view]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top bar — floating Liquid Glass surface */}
       <header className="sticky top-0 z-40 px-3 pt-3">
         <div className="glass-float relative flex h-14 items-center gap-3 rounded-2xl border px-4">
           {isMobile && (
-            <Sheet>
+            <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Open navigation">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-4">
+              <SheetContent side="left" className="w-64 p-4 overflow-y-auto overscroll-contain">
                 <div className="mb-4">
                   <Logo />
                 </div>
-                <NavList view={view} navigate={navigate} nav={nav} onNavigate={undefined} />
+                <SheetTitle className="sr-only">Main navigation</SheetTitle>
+                <SheetDescription className="sr-only">Navigate between dashboard, schedules, conflict center and tools.</SheetDescription>
+                <NavList view={view} navigate={navigate} nav={nav} onNavigate={() => setDrawerOpen(false)} />
               </SheetContent>
             </Sheet>
           )}
@@ -115,7 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Desktop sidebar — floating glass rail */}
         {!isMobile && (
           <aside className="w-56 shrink-0 hidden lg:block pl-3 py-3">
-            <div className="glass-float relative sticky top-[80px] flex h-[calc(100vh-104px)] flex-col rounded-2xl border p-3 overflow-y-auto">
+            <div className="glass-float relative sticky top-[80px] flex h-[calc(100vh-104px)] flex-col rounded-2xl border p-3 overflow-y-auto overscroll-contain">
               <NavList view={view} navigate={navigate} nav={nav} onNavigate={undefined} />
               <div className="mt-6 mx-1 p-3 rounded-xl glass-tint border border-orange-100 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-900">
                 <div className="text-[11px] font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-1">
@@ -129,7 +144,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
         )}
 
-        <main className="flex-1 min-w-0 p-4 md:p-6 pb-16">{children}</main>
+        <main className="flex-1 min-w-0 p-4 md:p-6 pb-16">
+          {/* Entrance transition on view change (fade + gentle rise, reduced-motion safe) */}
+          <div key={view} className="animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
+            {children}
+          </div>
+        </main>
       </div>
 
       <footer className="border-t mt-auto bg-background/55">
@@ -153,10 +173,10 @@ function NavList({ view, navigate, nav, onNavigate }: { view: ViewKey; navigate:
             onNavigate?.();
           }}
           className={cn(
-            'w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all',
+            'w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ease-out',
             view === item.key
               ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 shadow-[inset_0_1px_0_rgb(255_255_255/0.45)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]'
-              : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-sm'
+              : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground active:bg-muted/80 hover:shadow-sm'
           )}
           aria-current={view === item.key ? 'page' : undefined}
         >

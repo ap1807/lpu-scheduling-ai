@@ -66,7 +66,7 @@ export function DashboardView() {
           <button
             onClick={() => detect.mutate()}
             disabled={detect.isPending}
-            className="inline-flex items-center gap-2 rounded-lg border glass-chip px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border glass-chip px-3 py-1.5 text-sm font-medium disabled:opacity-50 active:scale-[0.97]"
           >
             <RefreshCw className={`w-4 h-4 ${detect.isPending ? 'animate-spin' : ''}`} />
             {detect.isPending ? 'Re-running engine scan…' : 'Re-run conflict detection'}
