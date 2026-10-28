@@ -235,7 +235,7 @@ function ActivityForm({ activity, onDone }: { activity: ActivityRow | null; onDo
       </div>
 
       {warnings.length > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 p-3 space-y-1">
+        <div className="glass-tint rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 p-3 space-y-1">
           <div className="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4" /> Engine rule preview — saving will register a conflict
           </div>
@@ -253,7 +253,7 @@ function ActivityForm({ activity, onDone }: { activity: ActivityRow | null; onDo
           Deterministic engine validates every save — AI never writes to the timetable.
         </div>
         <Button variant="outline" onClick={onDone}>Cancel</Button>
-        <Button onClick={onSubmit} className="bg-orange-600 hover:bg-orange-700" disabled={saving}>
+        <Button onClick={onSubmit} className="bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md shadow-orange-600/25" disabled={saving}>
           <Save className="w-4 h-4 mr-1.5" /> {saving ? 'Saving…' : activity ? 'Save changes' : 'Create activity'}
         </Button>
       </DialogFooter>

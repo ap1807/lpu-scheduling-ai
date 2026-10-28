@@ -120,7 +120,7 @@ export function WhatIfView() {
                 </SelectContent>
               </Select>
               {primary && (
-                <div className="text-[11px] text-muted-foreground rounded border bg-muted/40 p-2 leading-relaxed">
+                <div className="glass-well text-[11px] text-muted-foreground rounded-lg border border-transparent p-2 leading-relaxed">
                   <b>{primary.courseCode} {primary.sectionCode}</b> ({primary.courseName})<br />
                   {dateLabel(primary.date)} · {formatMin(primary.startMin)}–{formatMin(primary.endMin)} · {primary.roomCode} ({primary.blockCode})<br />
                   {primary.facultyName} · {primary.studentGroupCode} · {primary.capacityRequired} seats
@@ -148,7 +148,7 @@ export function WhatIfView() {
                 </div>
               )}
               {drafts.map((d, i) => (
-                <div key={i} className="rounded-md border p-2.5 space-y-2">
+                <div key={i} className="glass-panel rounded-lg border p-2.5 space-y-2">
                   <div className="flex items-center gap-2">
                     <Select value={d.field} onValueChange={(v) => setDrafts(drafts.map((x, j) => (j === i ? { ...x, field: v as ChangeDraft['field'] } : x)))}>
                       <SelectTrigger className="h-7 w-36 text-xs"><SelectValue /></SelectTrigger>
@@ -235,7 +235,7 @@ export function WhatIfView() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {scenarios!.scenarios.map((s) => (
-                  <div key={s.id} className="rounded-md border p-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                  <div key={s.id} className="glass-panel glass-hover rounded-lg border p-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold flex items-center gap-2">
                         {s.name}
@@ -291,7 +291,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
       <CardContent className="space-y-4">
         {/* resolved / created */}
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/25 dark:border-emerald-900 p-3">
+          <div className="glass-tint rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/25 dark:border-emerald-900 p-3">
             <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase flex items-center gap-1.5 mb-2">
               <CheckCircle2 className="w-4 h-4" /> Conflicts resolved ({d.conflictsResolved.length})
             </div>
@@ -305,7 +305,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
               ))
             )}
           </div>
-          <div className={cn('rounded-lg border p-3', d.conflictsCreated.length ? 'border-red-200 bg-red-50/50 dark:bg-red-950/25 dark:border-red-900' : 'border-slate-200')}>
+          <div className={cn('glass-tint rounded-xl border p-3', d.conflictsCreated.length ? 'border-red-200 bg-red-50/50 dark:bg-red-950/25 dark:border-red-900' : 'border-slate-200')}>
             <div className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase flex items-center gap-1.5 mb-2">
               <AlertTriangle className="w-4 h-4" /> New conflicts created ({d.conflictsCreated.length})
             </div>
@@ -334,7 +334,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
             <div className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> Timetable changes</div>
             <div className="space-y-1">
               {d.timetableChanges.map((t, i) => (
-                <div key={i} className="text-xs rounded border bg-muted/30 p-2">
+                <div key={i} className="glass-well text-xs rounded border border-transparent p-2">
                   <span className="font-mono text-[10px] text-muted-foreground mr-2">{t.activityCode}</span>
                   {t.description}
                 </div>
@@ -345,7 +345,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
 
         {/* workload / capacity */}
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="rounded-lg border p-3">
+          <div className="glass-panel rounded-lg border p-3">
             <div className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">Workload changes</div>
             {d.workloadChanges.length === 0 ? (
               <div className="text-xs text-muted-foreground">No faculty workload deltas.</div>
@@ -360,7 +360,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
               ))
             )}
           </div>
-          <div className="rounded-lg border p-3">
+          <div className="glass-panel rounded-lg border p-3">
             <div className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">Capacity changes (bookings per room)</div>
             {d.capacityChanges.length === 0 ? (
               <div className="text-xs text-muted-foreground">No room load changes.</div>
@@ -385,7 +385,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
               <GitBranch className="w-3.5 h-3.5" /> Dependency chain (cascading analysis)
               {c.hasCascadingRisk && <span className="text-red-600 normal-case font-medium">— hard cascade risk detected</span>}
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 max-h-60 overflow-y-auto">
+            <div className="glass-well rounded-lg border border-transparent p-3 space-y-1.5 max-h-60 overflow-y-auto">
               {c.chain.map((n, i) => (
                 <div key={i} className="flex gap-2 items-start text-xs">
                   <span className={cn(
@@ -411,7 +411,7 @@ function SimulationResults({ result }: { result: SimulationResult }) {
 
 function MiniStat({ icon: Icon, label, items }: { icon: React.ComponentType<{ className?: string }>; label: string; items: string[] }) {
   return (
-    <div className="rounded-lg border p-3">
+    <div className="glass-panel rounded-lg border p-3">
       <div className="text-xs font-semibold text-muted-foreground uppercase mb-1 flex items-center gap-1.5">
         <Icon className="w-3.5 h-3.5" /> {label} ({items.length})
       </div>

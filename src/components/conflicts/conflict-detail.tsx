@@ -138,7 +138,7 @@ export function ConflictDetail({ conflict, onBack, onChanged }: { conflict: Conf
             <SectionLabel icon={FileSearch} label={`Involved schedule records (${d.activities.length})`} />
             <div className="space-y-1.5">
               {d.activities.map((a) => (
-                <div key={a.id} className="rounded-md border p-3 flex flex-wrap gap-x-4 gap-y-1 items-center text-sm hover:border-orange-300 transition">
+                <div key={a.id} className="glass-panel glass-hover rounded-lg border p-3 flex flex-wrap gap-x-4 gap-y-1 items-center text-sm">
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">
                       {a.courseCode} {a.sectionCode} <span className="text-muted-foreground font-normal">· {a.courseName}</span>
@@ -182,7 +182,7 @@ export function ConflictDetail({ conflict, onBack, onChanged }: { conflict: Conf
           {/* cascade chain */}
           <div>
             <SectionLabel icon={GitBranch} label="Cascading impact analysis (engine)" />
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <div className="glass-panel rounded-xl border p-3 space-y-2">
               {d.conflict.cascadingImpact.length === 0 ? (
                 <div className="text-xs text-muted-foreground">No cascading effects recorded.</div>
               ) : (
@@ -243,7 +243,7 @@ export function ConflictDetail({ conflict, onBack, onChanged }: { conflict: Conf
 
               {/* narrative */}
               {latestRequest.narrative && (
-                <div className="rounded-lg border border-orange-200 bg-orange-50/60 dark:bg-orange-950/30 dark:border-orange-900 p-4">
+                <div className="glass-ai rounded-xl border border-orange-200 bg-orange-50/60 dark:bg-orange-950/30 dark:border-orange-900 p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-orange-800 dark:text-orange-300 mb-2">
                     <BrainCircuit className="w-4 h-4" /> AI root-cause narrative
                     <Badge variant="outline" className="text-[10px] font-normal">{latestRequest.narrative ? 'engine facts + LLM' : ''}</Badge>
@@ -270,7 +270,7 @@ export function ConflictDetail({ conflict, onBack, onChanged }: { conflict: Conf
 
               {/* approval / rejection */}
               {hasAwaiting && (
-                <div className="rounded-lg border p-4 space-y-3">
+                <div className="glass-panel rounded-xl border p-4 space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <UserCheck className="w-4 h-4 text-emerald-600" /> Human approval required
                   </div>
@@ -293,7 +293,7 @@ export function ConflictDetail({ conflict, onBack, onChanged }: { conflict: Conf
 
               {/* decision outcome */}
               {latestRequest.status !== 'AWAITING_APPROVAL' && latestRequest.decidedBy && (
-                <div className={cn('rounded-lg border p-4 text-sm', latestRequest.status === 'APPLIED' || latestRequest.status === 'APPROVED' ? 'border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/30 dark:border-emerald-900' : 'border-slate-200 bg-slate-50 dark:bg-slate-900')}>
+                <div className={cn('glass-tint rounded-xl border p-4 text-sm', latestRequest.status === 'APPLIED' || latestRequest.status === 'APPROVED' ? 'border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/30 dark:border-emerald-900' : 'border-slate-200 bg-slate-50 dark:bg-slate-900')}>
                   <div className="font-semibold flex items-center gap-2">
                     {latestRequest.status === 'APPLIED' || latestRequest.status === 'APPROVED' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4" />}
                     {latestRequest.status === 'APPLIED' ? 'Applied to official schedule' : latestRequest.status === 'REJECTED' ? 'Rejected' : latestRequest.status}
@@ -359,7 +359,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ComponentType<{ class
 
 function ResBox({ label, items }: { label: string; items: string[] }) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2.5">
+    <div className="glass-panel rounded-lg border p-2.5">
       <div className="text-[10px] font-semibold text-muted-foreground uppercase">{label}</div>
       <div className="flex flex-wrap gap-1 mt-1">
         {items.length === 0 ? <span className="text-[10px] text-muted-foreground">—</span> : items.map((i) => (
@@ -377,7 +377,7 @@ function StagePipeline({ stages }: { stages: CD['resolutionRequests'][0]['stages
       {stages.map((s) => {
         const Icon = STAGE_ICONS[s.key] ?? Cog;
         return (
-          <div key={s.stage} className="p-3">
+          <div key={s.stage} className="glass-well rounded-lg border border-transparent p-3">
             <button className="w-full flex items-center gap-3 text-left" onClick={() => setOpenStage(openStage === s.stage ? null : s.stage)}>
               <div className={cn(
                 'w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold',
@@ -399,7 +399,7 @@ function StagePipeline({ stages }: { stages: CD['resolutionRequests'][0]['stages
               {openStage === s.stage ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>
             {openStage === s.stage && s.detail && (
-              <pre className="mt-2 text-[11px] whitespace-pre-wrap font-mono bg-muted/50 rounded-md p-2.5 max-h-64 overflow-y-auto">{s.detail}</pre>
+              <pre className="glass-well mt-2 text-[11px] whitespace-pre-wrap font-mono rounded-md p-2.5 max-h-64 overflow-y-auto">{s.detail}</pre>
             )}
           </div>
         );
@@ -417,8 +417,8 @@ function CandidateCard({ c, isRecommended, canApprove, onApprove }: {
   const [showChecks, setShowChecks] = useState(false);
   return (
     <div className={cn(
-      'rounded-lg border p-3.5 space-y-2.5',
-      isRecommended && 'border-orange-300 bg-orange-50/50 dark:bg-orange-950/25 dark:border-orange-800 ring-1 ring-orange-200',
+      'rounded-xl border glass-panel p-3.5 space-y-2.5',
+      isRecommended && 'glass-ai border-orange-300 bg-orange-50/50 dark:bg-orange-950/25 dark:border-orange-800 ring-1 ring-orange-200',
       !c.valid && 'opacity-75 border-red-200'
     )}>
       <div className="flex flex-wrap items-center gap-2">
@@ -479,7 +479,7 @@ function CandidateCard({ c, isRecommended, canApprove, onApprove }: {
 
       {/* AI reasoning */}
       {c.reasoning && (
-        <div className="rounded border bg-muted/40 p-2.5">
+        <div className="glass-well rounded-lg border border-transparent p-2.5">
           <div className="text-[10px] font-semibold uppercase text-muted-foreground mb-1 flex items-center gap-1">
             <Bot className="w-3 h-3 text-orange-600" /> AI explanation
           </div>
@@ -496,7 +496,7 @@ function CandidateCard({ c, isRecommended, canApprove, onApprove }: {
         {showChecks ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       </button>
       {showChecks && (
-        <div className="rounded border bg-muted/30 p-2.5 space-y-1">
+        <div className="glass-well rounded-lg border border-transparent p-2.5 space-y-1">
           {c.validation.checks.map((chk, i) => (
             <div key={i} className="flex items-start gap-1.5 text-xs">
               {chk.passed ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />}

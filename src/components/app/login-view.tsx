@@ -71,8 +71,13 @@ export function LoginView() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-orange-50/40 to-background">
-      <header className="border-b">
+    <div className="relative overflow-hidden min-h-screen flex flex-col bg-gradient-to-br from-background via-orange-50/40 to-background">
+      {/* Ambient light (existing palette, restrained) */}
+      <div aria-hidden className="pointer-events-none absolute -top-44 -left-40 w-[38rem] h-[38rem] rounded-full bg-orange-600/10 dark:bg-orange-600/15 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-56 -right-36 w-[36rem] h-[36rem] rounded-full bg-violet-500/10 dark:bg-violet-500/12 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute top-1/3 left-2/3 w-[26rem] h-[26rem] rounded-full bg-teal-500/10 dark:bg-teal-500/10 blur-3xl" />
+
+      <header className="relative border-b bg-background/50 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-orange-600 flex items-center justify-center">
             <Building2 className="w-6 h-6 text-white" />
@@ -84,7 +89,7 @@ export function LoginView() {
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
+      <main className="relative flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-5xl grid lg:grid-cols-[400px_1fr] gap-8">
           <Card>
             <CardHeader>
@@ -115,7 +120,7 @@ export function LoginView() {
                     <span>{error}</span>
                   </div>
                 )}
-                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={busy}>
+                <Button type="submit" className="w-full bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-600/30 border border-orange-400/40" disabled={busy}>
                   {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Lock className="w-4 h-4 mr-2" />}
                   Sign in
                 </Button>
@@ -143,7 +148,7 @@ export function LoginView() {
                   key={acc.email}
                   onClick={() => quick.mutate({ email: acc.email, password: acc.password })}
                   disabled={quick.isPending}
-                  className="text-left rounded-lg border bg-card p-4 hover:border-orange-400 hover:shadow-sm transition group"
+                  className="text-left rounded-xl border glass-panel glass-hover p-4 hover:border-orange-400 transition-all group"
                 >
                   <div className="flex items-center gap-2">
                     <acc.icon className="w-4 h-4 text-orange-600" />
@@ -161,7 +166,7 @@ export function LoginView() {
         </div>
       </main>
 
-      <footer className="border-t">
+      <footer className="relative border-t bg-background/55">
         <div className="max-w-6xl mx-auto px-4 py-4 text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 justify-between">
           <span>Demo build · Fictional sample data only</span>
           <span>Deterministic engine = source of truth · AI = reasoning layer · Human = approval authority</span>

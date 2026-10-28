@@ -66,7 +66,7 @@ export function DashboardView() {
           <button
             onClick={() => detect.mutate()}
             disabled={detect.isPending}
-            className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border glass-chip px-3 py-1.5 text-sm font-medium disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${detect.isPending ? 'animate-spin' : ''}`} />
             {detect.isPending ? 'Re-running engine scan…' : 'Re-run conflict detection'}
@@ -226,7 +226,7 @@ export function DashboardView() {
 
           <button
             onClick={() => navigate('conflicts')}
-            className="w-full rounded-lg border border-dashed p-4 text-sm text-muted-foreground hover:border-orange-400 hover:text-foreground transition flex items-center justify-center gap-2"
+            className="w-full rounded-xl glass-panel border border-dashed p-4 text-sm text-muted-foreground hover:border-orange-400 hover:text-foreground transition flex items-center justify-center gap-2"
           >
             <AlertTriangle className="w-4 h-4 text-orange-600" /> Open the LPU Conflict Center to investigate {k.activeConflicts} active conflicts
           </button>
@@ -372,7 +372,7 @@ export function DashboardView() {
 
 function InfoTile({ label, value, icon: Icon, hint }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; hint?: string }) {
   return (
-    <div className="rounded-lg border bg-card p-4 flex items-center gap-3">
+    <div className="rounded-xl border glass-panel p-4 flex items-center gap-3">
       <div className="w-9 h-9 rounded-md bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center shrink-0">
         <Icon className="w-5 h-5" />
       </div>
@@ -388,7 +388,7 @@ function InfoTile({ label, value, icon: Icon, hint }: { label: string; value: st
 function ChartTip({ active, payload, label, labelSuffix }: { active?: boolean; payload?: Array<{ name?: string; value?: number | string }>; label?: string; labelSuffix?: string }) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="rounded-md border bg-popover px-3 py-1.5 text-xs shadow-md">
+    <div className="glass-float relative rounded-lg border px-3 py-1.5 text-xs">
       <div className="font-medium">{label ?? payload[0]?.name}</div>
       {payload.map((p, i) => (
         <div key={i} className="text-muted-foreground">

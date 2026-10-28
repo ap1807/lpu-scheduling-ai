@@ -85,7 +85,7 @@ export function AssistantView() {
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="text-xs rounded-full border px-3 py-1.5 text-muted-foreground hover:border-orange-400 hover:text-foreground transition"
+                    className="text-xs rounded-full border glass-chip px-3 py-1.5 text-muted-foreground hover:text-foreground transition"
                   >
                     {s}
                   </button>
@@ -103,7 +103,7 @@ export function AssistantView() {
               )}
               <div className={cn(
                 'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed space-y-3',
-                m.role === 'user' ? 'bg-orange-600 text-white' : 'border bg-card'
+                m.role === 'user' ? 'bg-orange-600 text-white' : 'border glass-panel'
               )}>
                 <div className="whitespace-pre-wrap">{m.content}</div>
 
@@ -122,7 +122,7 @@ export function AssistantView() {
               <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4 text-orange-600" />
               </div>
-              <div className="border bg-card rounded-xl px-3.5 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="border glass-panel rounded-xl px-3.5 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin text-orange-600" />
                 Retrieving schedule records and reasoning…
               </div>
@@ -176,7 +176,7 @@ export function AssistantView() {
               <button
                 key={s}
                 onClick={() => send(s)}
-                className="w-full text-left text-[11px] rounded-md border px-2.5 py-1.5 text-muted-foreground hover:border-orange-400 hover:text-foreground transition"
+                className="glass-ai w-full text-left text-[11px] rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2.5 py-1.5 text-muted-foreground hover:text-foreground transition"
               >
                 {s}
               </button>
@@ -222,7 +222,7 @@ function ReplyMeta({ reply, onNavigate }: { reply: AssistantReply2; onNavigate: 
             <button
               key={i}
               onClick={() => onNavigate(a.view, a.params)}
-              className="text-[10px] inline-flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2 py-1 text-orange-700 dark:text-orange-300 hover:bg-orange-100"
+              className="glass-ai text-[10px] inline-flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800 px-2 py-1 text-orange-700 dark:text-orange-300 hover:bg-orange-100"
             >
               {a.label} <ArrowRight className="w-3 h-3" />
             </button>

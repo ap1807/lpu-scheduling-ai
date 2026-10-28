@@ -232,7 +232,7 @@ export function ScheduleView() {
                           (a) => a.date === d && a.startMin < (h + 1) * 60 && a.endMin > h * 60 && a.startMin >= h * 60 && a.startMin < (h + 1) * 60
                         );
                         return (
-                          <div key={d + h} className="min-h-10 rounded border-l-2 border-transparent bg-muted/20 hover:bg-muted/40 transition p-0.5 space-y-0.5">
+                          <div key={d + h} className="min-h-10 rounded border-l-2 border-transparent glass-well hover:bg-muted/40 transition p-0.5 space-y-0.5">
                             {slots.map((a) => (
                               <ActivityChip key={a.id} a={a} canEdit={canEdit} onEdit={() => { setEditActivity(a); setFormOpen(true); }} onDuplicate={() => dup.mutate(a.id)} onDelete={() => del.mutate(a.id)} />
                             ))}
@@ -318,7 +318,7 @@ export function ScheduleView() {
               ) : (
                 <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
                   <table className="w-full text-xs">
-                    <thead className="sticky top-0 bg-muted z-10">
+                    <thead className="sticky top-0 bg-muted/90 backdrop-blur-md z-10">
                     <tr className="text-left">
                       {['Code', 'Date', 'Day', 'Time', 'Course', 'Section', 'Type', 'Room', 'Block', 'Faculty', 'Group', 'Seats', ''].map((h) => (
                         <th key={h} className="px-2.5 py-2 font-semibold whitespace-nowrap border-b">{h}</th>
@@ -408,7 +408,7 @@ function ActivityChip({ a, canEdit, onEdit, onDuplicate, onDelete }: { a: Activi
 
 function NavigateToActivityHint({ id }: { id: string }) {
   return (
-    <div className="rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-900 px-3 py-2 text-xs text-orange-800 dark:text-orange-300 flex items-center gap-2">
+    <div className="glass-tint rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-900 px-3 py-2 text-xs text-orange-800 dark:text-orange-300 flex items-center gap-2">
       <AlertTriangle className="w-4 h-4" /> Activity context: {id} — see highlighted record above.
     </div>
   );

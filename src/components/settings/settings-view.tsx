@@ -132,7 +132,7 @@ export function SettingsView() {
                     const value = rules[f.key];
                     if (f.kind === 'bool') {
                       return (
-                        <div key={f.key} className="rounded-lg border p-3 flex items-center justify-between gap-3">
+                        <div key={f.key} className="glass-panel rounded-xl border p-3 flex items-center justify-between gap-3">
                           <div>
                             <div className="text-sm font-medium">{f.label}</div>
                             <div className="text-[10px] text-muted-foreground">{f.hint}</div>
@@ -142,7 +142,7 @@ export function SettingsView() {
                       );
                     }
                     return (
-                      <div key={f.key} className="rounded-lg border p-3 space-y-1.5">
+                      <div key={f.key} className="glass-panel rounded-xl border p-3 space-y-1.5">
                         <Label className="text-xs">{f.label}</Label>
                         {f.kind === 'time' ? (
                           <Input
@@ -263,7 +263,7 @@ export function SettingsView() {
 
 function RoleCard({ role, capabilities }: { role: string; capabilities: string }) {
   return (
-    <div className="rounded-md border p-2.5">
+    <div className="glass-panel rounded-lg border p-2.5">
       <div className="font-semibold text-[11px]">{role}</div>
       <div className="text-muted-foreground text-[10px] leading-snug mt-0.5">{capabilities}</div>
     </div>

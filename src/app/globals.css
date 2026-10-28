@@ -119,4 +119,287 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Refined scrollbars (Liquid Glass) */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.4) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.35);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(148 163 184 / 0.55);
+    background-clip: content-box;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgb(100 116 139 / 0.45);
+    background-clip: content-box;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgb(100 116 139 / 0.65);
+    background-clip: content-box;
+  }
+}
+
+/* ============================================================
+   Liquid Glass design system (Apple-inspired, iOS 26 language)
+   - Base layer: app background + restrained ambient light
+   - Main layer: .glass-panel content surfaces (no blur — perf)
+   - Floating layer: .glass-float chrome (nav, sidebar, dialogs,
+     popovers, sheets) with backdrop blur + saturation
+   - .glass-tint / .glass-ai add glass depth to EXISTING colored
+     translucent panels without changing their colors
+   All colors derive from the existing LPU palette (orange,
+   slate, emerald, red, amber, violet) at reduced opacity.
+   ============================================================ */
+
+:root {
+  /* floating chrome */
+  --glass-float-bg: oklch(1 0 0 / 0.62);
+  --glass-float-border: rgb(255 255 255 / 0.55);
+  --glass-float-hairline: rgb(15 23 42 / 0.1);
+  --glass-float-blur: 20px;
+  --glass-float-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.65),
+    0 12px 40px -12px rgb(15 23 42 / 0.16),
+    0 2px 8px -2px rgb(15 23 42 / 0.08);
+  /* content surfaces */
+  --glass-panel-bg: oklch(1 0 0 / 0.66);
+  --glass-panel-border: rgb(15 23 42 / 0.08);
+  --glass-panel-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.6),
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 8px 24px -16px rgb(15 23 42 / 0.12);
+  /* tinted glass layers (keeps the host element's own background) */
+  --glass-tint-blur: 12px;
+  --glass-tint-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.55),
+    0 4px 16px -12px rgb(15 23 42 / 0.14);
+  /* hover elevation */
+  --glass-lift-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.65),
+    0 8px 28px -12px rgb(15 23 42 / 0.18);
+  /* opaque fallback */
+  --glass-opaque: oklch(1 0 0);
+  /* ambient light opacity multipliers */
+  --ambient-1: 0.07;
+  --ambient-2: 0.05;
+  --ambient-3: 0.06;
+}
+
+.dark {
+  --glass-float-bg: oklch(0.205 0 0 / 0.62);
+  --glass-float-border: rgb(255 255 255 / 0.12);
+  --glass-float-hairline: rgb(255 255 255 / 0.08);
+  --glass-float-blur: 20px;
+  --glass-float-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.09),
+    0 12px 40px -12px rgb(0 0 0 / 0.6),
+    0 2px 8px -2px rgb(0 0 0 / 0.45);
+  --glass-panel-bg: oklch(0.205 0 0 / 0.58);
+  --glass-panel-border: rgb(255 255 255 / 0.1);
+  --glass-panel-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+    0 1px 2px rgb(0 0 0 / 0.35),
+    0 8px 24px -16px rgb(0 0 0 / 0.5);
+  --glass-tint-blur: 12px;
+  --glass-tint-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.07),
+    0 4px 16px -12px rgb(0 0 0 / 0.5);
+  --glass-lift-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.09),
+    0 8px 28px -12px rgb(0 0 0 / 0.55);
+  --glass-opaque: oklch(0.205 0 0);
+  --ambient-1: 0.1;
+  --ambient-2: 0.06;
+  --ambient-3: 0.08;
+}
+
+@layer components {
+  /* Floating chrome: top bar, sidebar, dialogs, popovers, sheets */
+  .glass-float {
+    background: var(--glass-float-bg);
+    -webkit-backdrop-filter: blur(var(--glass-float-blur)) saturate(1.6);
+    backdrop-filter: blur(var(--glass-float-blur)) saturate(1.6);
+    border-color: var(--glass-float-hairline);
+    box-shadow: var(--glass-float-shadow);
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
+  }
+  /* Hairline top reflection on floating bars (pseudo-element, no layout impact) */
+  .glass-float::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      var(--glass-float-border) 0%,
+      transparent 34%,
+      transparent 66%,
+      var(--glass-float-border) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Content surfaces: cards, KPI tiles, chart containers (no backdrop-filter — performance) */
+  .glass-panel {
+    background: var(--glass-panel-bg);
+    border-color: var(--glass-panel-border);
+    box-shadow: var(--glass-panel-shadow);
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease,
+      transform 0.35s ease;
+  }
+
+  /* Glass depth for elements that keep their own translucent color (emerald/red/orange panels) */
+  .glass-tint {
+    -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.3);
+    box-shadow: var(--glass-tint-shadow);
+  }
+
+  /* AI panels: same technique with a restrained orange-tinted reflection */
+  .glass-ai {
+    -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.35);
+    backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.35);
+    box-shadow:
+      inset 0 1px 0 0 rgb(234 88 12 / 0.12),
+      0 4px 20px -12px rgb(234 88 12 / 0.18);
+  }
+
+  /* Interactive elevation: gentle lift on hover (usable on cards & rows) */
+  .glass-hover {
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+  .glass-hover:hover {
+    box-shadow: var(--glass-lift-shadow);
+    border-color: rgb(234 88 12 / 0.28);
+  }
+
+  /* Small translucent chips (suggestions, filters, tags) */
+  .glass-chip {
+    background: oklch(1 0 0 / 0.45);
+    border-color: rgb(15 23 42 / 0.08);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.5);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      color 0.25s ease;
+  }
+  .dark .glass-chip {
+    background: oklch(1 0 0 / 0.06);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.07);
+  }
+  .glass-chip:hover {
+    border-color: rgb(234 88 12 / 0.35);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.55),
+      0 4px 14px -8px rgb(234 88 12 / 0.25);
+  }
+
+  /* Sunken inner surface (grid cells, wells, code blocks, stage details) */
+  .glass-well {
+    background: oklch(0.145 0 0 / 0.03);
+    box-shadow:
+      inset 0 1px 2px rgb(15 23 42 / 0.05),
+      inset 0 0 0 1px rgb(15 23 42 / 0.05);
+  }
+  .dark .glass-well {
+    background: oklch(1 0 0 / 0.04);
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.35),
+      inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+}
+
+/* ---------- Ambient lighting (fixed base layer, from existing palette) ---------- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(44rem 30rem at 6% -6%, rgb(234 88 12 / var(--ambient-1)), transparent 62%),
+    radial-gradient(38rem 26rem at 98% 4%, rgb(20 184 166 / var(--ambient-2)), transparent 62%),
+    radial-gradient(46rem 34rem at 80% 110%, rgb(139 92 246 / var(--ambient-3)), transparent 62%);
+}
+
+/* ---------- Accessibility: reduced transparency → opaque surfaces ---------- */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-float-bg: var(--glass-opaque);
+    --glass-panel-bg: var(--glass-opaque);
+  }
+  .glass-float,
+  .glass-tint,
+  .glass-ai,
+  .glass-chip {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  body::before {
+    display: none;
+  }
+}
+
+/* ---------- Accessibility: graceful fallback without backdrop-filter ---------- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-float-bg: var(--glass-opaque);
+  }
+  .glass-panel {
+    background: var(--glass-opaque);
+  }
+  .glass-tint,
+  .glass-ai,
+  .glass-chip {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---------- Accessibility: reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .glass-hover:hover {
+    transform: none !important;
+  }
 }

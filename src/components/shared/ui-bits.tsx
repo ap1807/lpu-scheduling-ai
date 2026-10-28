@@ -99,7 +99,7 @@ export function KpiCard({ label, value, icon: Icon, tone, hint }: { label: strin
     violet: 'text-violet-600 bg-violet-50 dark:bg-violet-950/40',
   };
   return (
-    <div className="rounded-lg border bg-card p-4 min-w-0">
+    <div className="rounded-xl border glass-panel p-4 min-w-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground truncate">{label}</span>
         <div className={cn('w-7 h-7 rounded-md flex items-center justify-center shrink-0', tones[tone ?? 'slate'])}>

@@ -196,7 +196,7 @@ function SummaryTile({ label, value, icon: Icon, tone }: { label: string; value:
     green: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40',
   };
   return (
-    <div className="rounded-lg border bg-card p-3 flex items-center gap-3">
+    <div className="rounded-xl border glass-panel glass-hover p-3 flex items-center gap-3">
       <div className={cn('w-8 h-8 rounded-md flex items-center justify-center', tones[tone ?? ''] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800')}>
         <Icon className="w-4 h-4" />
       </div>

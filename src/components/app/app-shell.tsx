@@ -54,9 +54,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-        <div className="flex h-14 items-center gap-3 px-4">
+      {/* Top bar — floating Liquid Glass surface */}
+      <header className="sticky top-0 z-40 px-3 pt-3">
+        <div className="glass-float relative flex h-14 items-center gap-3 rounded-2xl border px-4">
           {isMobile && (
             <Sheet>
               <SheetTrigger asChild>
@@ -112,12 +112,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex-1 flex">
-        {/* Desktop sidebar */}
+        {/* Desktop sidebar — floating glass rail */}
         {!isMobile && (
-          <aside className="w-56 shrink-0 border-r bg-card/50 hidden lg:block">
-            <div className="p-3 sticky top-14">
+          <aside className="w-56 shrink-0 hidden lg:block pl-3 py-3">
+            <div className="glass-float relative sticky top-[80px] flex h-[calc(100vh-104px)] flex-col rounded-2xl border p-3 overflow-y-auto">
               <NavList view={view} navigate={navigate} nav={nav} onNavigate={undefined} />
-              <div className="mt-6 mx-1 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-900">
+              <div className="mt-6 mx-1 p-3 rounded-xl glass-tint border border-orange-100 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-900">
                 <div className="text-[11px] font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-1">
                   <RefreshCw className="w-3 h-3" /> System status
                 </div>
@@ -132,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0 p-4 md:p-6 pb-16">{children}</main>
       </div>
 
-      <footer className="border-t mt-auto">
+      <footer className="border-t mt-auto bg-background/55">
         <div className="max-w-7xl mx-auto px-4 py-3 text-[11px] text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 justify-between">
           <span>Agentic AI for LPU University Scheduling Conflict Detection &amp; Resolution</span>
           <span className="hidden sm:inline">Deterministic engine = source of truth · AI = reasoning &amp; explanation · Administrator = approval authority</span>
@@ -153,10 +153,10 @@ function NavList({ view, navigate, nav, onNavigate }: { view: ViewKey; navigate:
             onNavigate?.();
           }}
           className={cn(
-            'w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+            'w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all',
             view === item.key
-              ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 shadow-[inset_0_1px_0_rgb(255_255_255/0.45)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]'
+              : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-sm'
           )}
           aria-current={view === item.key ? 'page' : undefined}
         >
@@ -172,7 +172,7 @@ function NavList({ view, navigate, nav, onNavigate }: { view: ViewKey; navigate:
 function Logo() {
   return (
     <button onClick={() => useAppStore.getState().navigate('dashboard')} className="flex items-center gap-2 shrink-0" aria-label="Go to dashboard">
-      <div className="w-8 h-8 rounded-md bg-orange-600 flex items-center justify-center">
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-700 shadow-md shadow-orange-600/25 flex items-center justify-center ring-1 ring-white/20">
         <Building2 className="w-5 h-5 text-white" />
       </div>
       <div className="hidden sm:block text-left leading-tight">

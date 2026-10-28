@@ -81,7 +81,7 @@ export function AuditView() {
                 details = null;
               }
               return (
-                <div key={l.id} className={cn('rounded-lg border p-3 transition', isOpen && 'border-orange-300')}>
+                <div key={l.id} className={cn('glass-panel rounded-xl border p-3 transition', isOpen && 'border-orange-300')}>
                   <button className="w-full flex items-start gap-3 text-left" onClick={() => setExpanded(isOpen ? null : l.id)}>
                     <div className={cn('w-8 h-8 rounded-md border flex items-center justify-center shrink-0', meta.cls)}>
                       <meta.icon className="w-4 h-4" />
@@ -100,7 +100,7 @@ export function AuditView() {
                     <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform shrink-0 mt-1', isOpen && 'rotate-180')} />
                   </button>
                   {isOpen && details !== null && (
-                    <pre className="mt-2 text-[10px] whitespace-pre-wrap font-mono bg-muted/50 rounded-md p-3 max-h-80 overflow-y-auto leading-relaxed">
+                    <pre className="glass-well mt-2 text-[10px] whitespace-pre-wrap font-mono rounded-md p-3 max-h-80 overflow-y-auto leading-relaxed">
                       {JSON.stringify(details, null, 2).slice(0, 6000)}
                     </pre>
                   )}
