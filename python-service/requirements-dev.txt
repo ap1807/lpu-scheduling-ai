@@ -1,0 +1,4 @@
+# Development/test dependencies for the Python analysis service.
+-r requirements.txt
+pytest==9.0.2
+httpx==0.28.1

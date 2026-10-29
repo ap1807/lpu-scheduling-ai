@@ -250,8 +250,9 @@ src/lib/engine/                # DETERMINISTIC ENGINE (pure TS, no deps)
 src/lib/ai/                    # agent pipeline + assistant + LLM client
 src/lib/data/                  # loader, seed, controlled apply, reference data
 src/lib/auth.ts, session.ts    # NextAuth + RBAC guards
-src/app/api/                   # 17 route groups
+src/app/api/                   # 18 route groups
 src/components/                # app shell + 7 feature views
+python-service/                # isolated FastAPI analysis sidecar (see §19)
 ```
 
 ## 16. Configuration
@@ -260,6 +261,8 @@ src/components/                # app shell + 7 feature views
 |---|---|---|
 | `DATABASE_URL` | `file:/home/z/my-project/db/custom.db` | SQLite location |
 | `NEXTAUTH_SECRET` | set in `.env` | JWT session signing |
+| `PYTHON_SERVICE_URL` | `http://127.0.0.1:8000` | Base URL of the Python analysis service (server-side only — never exposed to the browser) |
+| `PYTHON_SERVICE_TIMEOUT_MS` | `2000` | Bridge fetch timeout for Python service calls |
 
 AI (GLM via `z-ai-web-dev-sdk`) is pre-configured — no API key needed in this environment; the SDK is **server-side only**. If the LLM is unavailable, all AI features degrade to deterministic output.
 
@@ -286,3 +289,31 @@ bun run build && bun run start   # standalone production build
 7. **What-If Simulator** → pick any activity, propose a move, run the simulation, review the delta and dependency chain.
 8. **AI Assistant** → ask “Find all room conflicts tomorrow”, “Why is CSE303 conflicting?”, “Which faculty members have excessive workload?”.
 9. Sign in as **Scheduler** to see the 403 on approval; as **Student** to see the scoped timetable.
+
+---
+
+## 19. Python analysis service (FastAPI sidecar)
+
+An isolated, advisory Python microservice lives in `python-service/`. It has its own directory, dependency set (`requirements.txt`, pinned), process and port (`127.0.0.1:8000`, loopback only). The Next.js backend is its **sole client** — browsers can never reach it (the gateway exposes only port 3000, and the service URL lives in server-side env config only).
+
+**The authority model is unchanged.** The TypeScript engine remains the sole authority for conflict detection and constraint validation; the administrator remains the sole approval authority. Python may analyze, explain and rank engine-verified records — it never validates schedules, never touches the database, never approves or applies anything. Every proposed change still flows through the existing validation + admin-approval workflow. Nothing in the existing app depends on the Python service: if it is stopped, all existing features keep working.
+
+```bash
+# setup (isolated venv)
+cd python-service && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+
+# run / stop (detached daemon; logs → python-service/logs/service.log)
+python3 scripts/service.py start | stop | status | probe
+
+# tests
+.venv/bin/python -m pytest tests/test_health.py                          # hermetic unit tests
+RUN_INTEGRATION=1 .venv/bin/python -m pytest tests/test_live_integration.py  # live bridge + RBAC
+```
+
+**Integration surface (stage 1):**
+
+- `GET /api/python-service` (ADMIN-only) — reports Python service health inside a structured JSON payload (`reachable`, `status ∈ {healthy, unreachable, error, timeout}`, `service`, `version`, `latencyMs`, `detail`, `checkedAt`). Python unavailability is reported inside the body — never as an unhandled 5xx.
+- Bridge implementation: `src/lib/python-service.ts` (server-side only; hard timeout via `AbortController`, deterministic fallback, never throws).
+- RBAC on the route is enforced server-side exactly like the other settings-tier routes (anonymous → 401, scheduler → 403).
+
+**Stage-1 tests (all verified passing):** 8 pytest unit tests, 4 pytest live-integration tests, 6 bun bridge-contract tests (`tests/python-bridge.test.ts`: healthy / HTTP-500 / non-JSON / degraded-payload / connection-refused / timeout), plus `scripts/verify-python-bridge.ts up|down` for end-to-end verification of both the reachable and fallback modes. The 30 engine tests are untouched.
