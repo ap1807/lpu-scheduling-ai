@@ -7,6 +7,26 @@ A production-quality platform for **Lovely Professional University (LPU)** that 
 > - **Agentic AI layer** = reasoning & explanation. It analyzes, narrates, plans and ranks — but can never declare a solution valid and can never touch the official timetable.
 > - **Administrator** = approval authority. Every schedule change flows through the human-in-the-loop workflow.
 
+## Screenshots
+
+| Login | Command Dashboard |
+|---|---|
+| ![Login](docs/screenshots/01-login.png) | ![Dashboard](docs/screenshots/02-dashboard.png) |
+
+| Conflict Center | 10-stage AI analysis |
+|---|---|
+| ![Conflicts](docs/screenshots/03-conflicts.png) | ![AI analysis](docs/screenshots/05-ai-analysis.png) |
+
+| Schedule Management | What-If Simulator |
+|---|---|
+| ![Schedules](docs/screenshots/06-schedules.png) | ![What-If](docs/screenshots/07-whatif.png) |
+
+| Dark mode | Mobile (390×844) |
+|---|---|
+| ![Dark mode](docs/screenshots/11-dark-mode.png) | ![Mobile drawer](docs/screenshots/13-mobile-drawer.png) |
+
+Full gallery (14 screenshots: all 7 views, AI pipeline, audit, settings, dark mode, mobile) in [`docs/screenshots/`](docs/screenshots/) · UI/UX design documentation in [`docs/UI_UX_DESIGN.md`](docs/UI_UX_DESIGN.md).
+
 ---
 
 ## 1. Quick start
@@ -121,6 +141,20 @@ Plus soft conflicts: faculty overload, back-to-back chains, student gaps, uneven
 - `src/lib/engine/**` is **pure TypeScript** — zero imports from the database, AI, Next.js or React. It runs on plain `ScheduleState` objects and is fully unit-testable (`tests/engine.test.ts`).
 - `src/lib/ai/**` may *read* engine results and call the LLM, but validity claims come exclusively from `constraint-validator.ts`.
 - `src/lib/data/apply.ts` is the **only** module that writes validated changes to the official timetable — and only after re-validation.
+
+---
+
+## 3a. UI / UX — the Liquid Glass design system
+
+The frontend uses a custom **"Liquid Glass"** design language (Apple iOS 26-inspired) implemented in `src/app/globals.css` on top of Tailwind 4 + shadcn/ui (49 primitives) + Radix UI, with Framer Motion 12 for view transitions.
+
+- **Three-layer glass architecture** — a fixed ambient-light base (orange/teal/violet radial gradients from the LPU palette); `.glass-panel` content surfaces (translucent, *no* backdrop blur — performance); `.glass-float` chrome for the top bar, drawer, dialogs and popovers (`blur(20px) saturate(1.6)` + hairline reflection); plus `.glass-tint` / `.glass-ai` depth for colored panels.
+- **One motion scale** — 150 ms micro-feedback, 200 ms dialogs/hover, 350 ms drawers/theme adaptation, all ease-out ("fast start, gentle settle").
+- **Consistent signal colors** — severity (red/orange/amber/slate), status (red/amber/emerald/slate), activity type, and the ⚙ ENGINE / 🤖 AI AGENT / 👤 HUMAN actor badges that make the authority model *visible* in the UI.
+- **Accessibility** — `prefers-reduced-transparency` (opaque surfaces + all blurs disabled), `@supports` fallback without `backdrop-filter`, `prefers-reduced-motion`, global `:focus-visible` outline, `scroll-padding-top` for the floating top bar, aria-labelled icon buttons.
+- **Responsive** — role-filtered persistent navigation on desktop; Sheet drawer + stacked layout on mobile (verified at 390×844); full dark mode with re-tuned glass tokens.
+
+Full design documentation — layer reference, tokens, motion table, component inventory, accessibility notes and a view-by-view UX walkthrough with all 14 screenshots — lives in **[`docs/UI_UX_DESIGN.md`](docs/UI_UX_DESIGN.md)**.
 
 ---
 
@@ -259,8 +293,8 @@ python-service/                # isolated FastAPI analysis sidecar (see §19)
 
 | Key | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `file:/home/z/my-project/db/custom.db` | SQLite location |
-| `NEXTAUTH_SECRET` | set in `.env` | JWT session signing |
+| `DATABASE_URL` | `file:./db/custom.db` | SQLite location (path relative to the project root; see `.env.example`) |
+| `NEXTAUTH_SECRET` | set in `.env` | JWT session signing (generate with `openssl rand -base64 32`) |
 | `PYTHON_SERVICE_URL` | `http://127.0.0.1:8000` | Base URL of the Python analysis service (server-side only — never exposed to the browser) |
 | `PYTHON_SERVICE_TIMEOUT_MS` | `2000` | Bridge fetch timeout for Python service calls |
 
@@ -317,3 +351,9 @@ RUN_INTEGRATION=1 .venv/bin/python -m pytest tests/test_live_integration.py  # l
 - RBAC on the route is enforced server-side exactly like the other settings-tier routes (anonymous → 401, scheduler → 403).
 
 **Stage-1 tests (all verified passing):** 8 pytest unit tests, 4 pytest live-integration tests, 6 bun bridge-contract tests (`tests/python-bridge.test.ts`: healthy / HTTP-500 / non-JSON / degraded-payload / connection-refused / timeout), plus `scripts/verify-python-bridge.ts up|down` for end-to-end verification of both the reachable and fallback modes. The 30 engine tests are untouched.
+
+---
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). All data is fictional sample data for demonstration purposes.

@@ -52,3 +52,16 @@ prompt
 server.log
 # Skills directory
 /skills/
+# platform / sandbox internals
+/.zscripts/
+/tool-results/
+/download/
+/examples/
+/mini-services/
+/dev.log
+/server.log
+/db/
+worklog.md
+
+# local screenshot artifacts (docs/screenshots is tracked)
+/scripts/verify-*.png
