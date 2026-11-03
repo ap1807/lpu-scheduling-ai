@@ -25,7 +25,7 @@ A production-quality platform for **Lovely Professional University (LPU)** that 
 |---|---|
 | ![Dark mode](docs/screenshots/11-dark-mode.png) | ![Mobile drawer](docs/screenshots/13-mobile-drawer.png) |
 
-Full gallery (14 screenshots: all 7 views, AI pipeline, audit, settings, dark mode, mobile) in [`docs/screenshots/`](docs/screenshots/) · UI/UX design documentation in [`docs/UI_UX_DESIGN.md`](docs/UI_UX_DESIGN.md).
+Full gallery (14 screenshots: all 7 views, AI pipeline, audit, settings, dark mode, mobile) in [`docs/screenshots/`](docs/screenshots/) · architecture & pipeline diagrams in [`docs/diagrams/`](docs/diagrams/) · UI/UX design documentation in [`docs/UI_UX_DESIGN.md`](docs/UI_UX_DESIGN.md).
 
 ---
 
@@ -105,36 +105,7 @@ Plus soft conflicts: faculty overload, back-to-back chains, student gaps, uneven
 
 ## 3. Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ FRONTEND (Next.js 16 App Router, single SPA route /)                 │
-│  App Shell · Login · Dashboard · Schedule Mgmt · Conflict Center     │
-│  What-If Simulator · AI Assistant · Audit Trail · Settings            │
-│  Tailwind 4 + shadcn/ui + Recharts + TanStack Query + Zustand        │
-└───────────────┬──────────────────────────────────────────────────────┘
-                │  /api/* (fetch, session cookie)
-┌───────────────▼──────────────────────────────────────────────────────┐
-│ API LAYER (Next.js route handlers, NextAuth session)                 │
-│  overview · activities CRUD · conflicts · detect · resolve ·          │
-│  decision · simulate · assistant · audit · rules · users · reset      │
-│  RBAC enforced server-side on every route (requireRole/requireAuth)  │
-├───────────────┬───────────────────────────┬──────────────────────────┤
-│ DETERMINISTIC │ AI ORCHESTRATION LAYER   │ DATA LAYER               │
-│ SCHEDULING    │ (src/lib/ai)             │ (Prisma + SQLite)        │
-│ ENGINE        │  agent.ts — 10-stage     │  loader.ts (DB→state)    │
-│ (src/lib/     │    agentic pipeline      │  apply.ts (controlled    │
-│  engine)      │  assistant.ts — grounded │    writes)               │
-│  conflict-    │    NL assistant          │  seed.ts (sample data)   │
-│  detector,    │  client.ts — z-ai SDK    │  16 models               │
-│  constraint-  │    (LLM, backend only)   │                          │
-│  validator,   │  LLM failures fall back │  AUDIT TRAIL             │
-│  candidate-   │  to deterministic text   │  (AuditLog, append-only) │
-│  generator,   │  — engine facts always   │                          │
-│  scoring,     │  win over AI claims      │                          │
-│  cascade,     │                           │                          │
-│  simulator    │                           │                          │
-└───────────────┴───────────────────────────┴──────────────────────────┘
-```
+![System architecture — three separate authorities](docs/diagrams/system-architecture.png)
 
 **Clean separation guarantees:**
 
@@ -215,6 +186,8 @@ Reports include `engineVerified: true` and the check list — the UI displays th
 `scoreAndRank` scores 0–100: validity 40, resolution 20, soft-impact 15 (new soft conflicts penalized), disruption 15 (students/faculty affected, swap multiplier, time-change multiplier), efficiency 10 (capacity fill, same-block bonus, time drift, complexity). Rank 1 = best; invalid candidates sink with the failure reason attached.
 
 ## 8. Agentic AI workflow (10 stages)
+
+![Agentic AI pipeline — 10 stages by responsible authority](docs/diagrams/agentic-ai-pipeline.png)
 
 | # | Stage | Actor |
 |---|---|---|
