@@ -60,7 +60,8 @@ server.log
 /mini-services/
 /dev.log
 /server.log
-/db/
+# database
+# /db/
 worklog.md
 
 # local screenshot artifacts (docs/screenshots is tracked)
